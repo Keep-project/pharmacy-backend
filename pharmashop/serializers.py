@@ -62,15 +62,15 @@ class MedicamentSerialisers(serializers.ModelSerializer):
             'nom',
             'prix',
             'marque',
-            'date-exp',
-            'images',
+            'date_exp',
+            'image',
             'masse',
             'qte_stock',
             'description',
             'posologie',
             'categorie',
             'user',
-            'Pharmacie',
+            'pharmacie',
             'created_at',
             'updated_at'
         ]  
