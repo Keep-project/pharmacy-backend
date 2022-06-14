@@ -19,5 +19,13 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/', include('djoser.urls')),
-    path('api/v1/', include('pharmashop.urls'))
+    path('api/v1/', include('pharmashop.urls')),
+  
+    path('api/v1/',  include('djoser.urls.jwt')),  
+    # To login, the URL should be api/v1/jwt/create/
+    # To refresh the token, the URL should be api/v1/jwt/refresh/
+    # To verify the token, the URL should be api/v1/jwt/verify/
+    # this website lienk can help https://djoser.readthedocs.io/en/latest/jwt_endpoints.html
+
+  
 ]

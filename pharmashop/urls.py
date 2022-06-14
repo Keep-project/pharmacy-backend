@@ -14,6 +14,7 @@ urlpatterns = [
 
                         #gestion des categories
     path("utilisateur", views.UtilisateurViewSet.as_view({'get': 'list', 'post':'post'})),
+    # path("jwt/create", views.UtilisateurViewSet.as_view({'get': 'list', 'post':'post'})),
     re_path("utilisateur/(?P<id>\d+)$", views.UtilisateurDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
 
       #gestion des categories

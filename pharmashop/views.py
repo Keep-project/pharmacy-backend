@@ -3,6 +3,8 @@ from msilib.schema import ServiceInstall
 from django.shortcuts import render
 from rest_framework import viewsets, status
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny, IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .models import Carnet, Symptome,Utilisateur,Categorie,\
     Pharmacie,Medicament
@@ -89,9 +91,11 @@ class CategorieViewSet(viewsets.ViewSet):
 
     def list(self, request, *args, **kwargs):
         # Utilisateur.objects.create(
-        #     password= "jenifer",
-        #     username= "jenifer",
-        #     email= "jenifer@gmail.com"
+        #     password= "john",
+        #     username= "john",
+        #     email= "john@gmail.com",
+        #     is_staff= True,
+        #     is_active = True,
         # )
         categorie = Categorie.objects.all()
         serializer = CategorieSerializers(categorie, many=True)
@@ -160,6 +164,7 @@ class UtilisateurViewSet(viewsets.ViewSet):
         return Response({'status': status.HTTP_400_BAD_REQUEST, 'data': serializer.errors }, status=status.HTTP_400_BAD_REQUEST) 
 
 class UtilisateurDetailViewSet(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
     def get_object(self, id):
         try:
             return Utilisateur.objects.get(id=id)

@@ -10,18 +10,20 @@ Base_URL = 'http://127.0.0.1:8000'
 
 class Categorie(models.Model):
     libelle = models.CharField(max_length=50)
-
-    class Meta:
-        def __str__(self):
-            return "{0}".format(self.libelle)
+       
+    def __str__(self):
+        return "{0}".format(self.libelle) 
 
 
 class Utilisateur(User):
     adresse = models.CharField(max_length=255)
+    avatar = models.FileField(upload_to='avatar/', blank=True, null=True)
+    status = models.CharField(max_length=255, blank=False, default="user")
+    experience = models.CharField(max_length=255,blank=False,  default=0)
 
-    class Meta:
-        def __str__(self):
-            return "{0}".format(self.adresse)    
+
+    def __str__(self):
+        return "{0}".format(self.username)    
 
 class Symptome(models.Model):
     libelle= models.CharField(max_length=50)
@@ -29,8 +31,10 @@ class Symptome(models.Model):
     updated_at =models.DateTimeField(auto_now=True)
 
     class Meta:
-        def __str__(self):
-            return "{0}".format(self.libelle)    
+       ordering=("-created_at",) 
+
+    def __str__(self):
+        return "{0}".format(self.libelle)    
 
 
 class Pharmacie(models.Model):
@@ -72,8 +76,8 @@ class Medicament(models.Model):
     class Meta:
         ordering=('-created_at',)
 
-        def __str__(self):
-            return "{0}".format(self.nom)
+    def __str__(self):
+        return "{0}".format(self.nom)
 
         
 
@@ -100,11 +104,11 @@ class Carnet(models.Model):
         ordering=('-created_at',)
 
     def __str__(self):
-        return "{0}".format(self.reponse)
+        return "{0}".format(self.message)
 
 
 class Maladie(models.Model):
-    nom = models.CharField(max_length=255, null=False)
+    libelle = models.CharField(max_length=255, null=False)
     consultation = models.ForeignKey(Consultaion, on_delete=models.CASCADE)
     created_at =models.DateTimeField(auto_now_add=True)
     updated_at =models.DateTimeField(auto_now=True)        
@@ -113,7 +117,7 @@ class Maladie(models.Model):
         ordering=('-created_at',)
 
     def __str__(self):
-        return "{0}".format(self.reponse)
+        return "{0}".format(self.libelle)
 
             
 
