@@ -27,7 +27,6 @@ class UtilisateurSerializer(serializers.ModelSerializer):
             'last_name',
             'adresse',
             'email',
-            'password',
             'is_staff',
             'is_active',
             'last_login',

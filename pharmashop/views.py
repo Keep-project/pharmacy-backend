@@ -3,7 +3,10 @@ from math import radians, cos, sin, asin, sqrt
 
 from rest_framework import viewsets, status
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.authentication import JWTAuthentication
+
+import django
 
 from .models import Carnet, Symptome,Utilisateur,Categorie,\
     Pharmacie,Medicament
@@ -125,13 +128,13 @@ class PharmacieDetailViewSet(viewsets.ViewSet):
 class CategorieViewSet(viewsets.ViewSet):
 
     def list(self, request, *args, **kwargs):
-        # Utilisateur.objects.create(
-        #     password= "john",
-        #     username= "john",
-        #     email= "john@gmail.com",
-        #     is_staff= True,
-        #     is_active = True,
-        # )
+        Utilisateur.objects.create(
+            password= "john",
+            username= "john",
+            email= "john@gmail.com",
+            is_staff= True,
+            is_active = True,
+        )
         categorie = Categorie.objects.all()
         serializer = CategorieSerializers(categorie, many=True)
         return Response({'status': status.HTTP_200_OK,'success': True,'message': 'Liste des categorie', 'results':serializer.data},status=status.HTTP_200_OK,)
@@ -182,22 +185,35 @@ class CategorieDetailViewSet(viewsets.ViewSet):
             
 
 class UtilisateurViewSet(viewsets.ViewSet):
+    permission_classes = [AllowAny]
     def list(request, self):
         utilisateur = Utilisateur.objects.all()
         serializer = UtilisateurSerializer(utilisateur, many=True)
         return Response({'success': True, 'status':status.HTTP_200_OK, 'message': 'liste des utilisateurs','results':serializer.data}, status=status.HTTP_200_OK)
 
 
-    def post(self,request, *args, **kwarg):
-        serializer = UtilisateurSerializer(data=request.data)
-        print(request.data)
-        if serializer.is_valid():
-
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        if ((len(data.get('username')) >= 4) and (len(data.get('password')) >= 8)):
+            try:
+                user = Utilisateur.objects.create_user(
+                username= data.get('username'),
+                password= data.get('password'),
+                email= data.get('email'),
+                avatar= request.FILES.get('avatar') if request.FILES.get('avatar') else '',
+                is_active=True,
+                is_staff=True,
+                is_superuser=  True if data.get('is_superuser') else False,
+            )
+            except django.db.utils.IntegrityError as e:
+               return Response({'status': status.HTTP_400_BAD_REQUEST, 'success' : False, 'message': "Le nom d'utilisateur '{0}' est déjà pris".format(data.get('username')) }, status=status.HTTP_400_BAD_REQUEST)
             
-            serializer.save()
-            return Response({'success': True, 'status': status.HTTP_201_CREATED, 'message': 'utilisateur crée avec success', 'results':serializer.data}, status = status.HTTP_201_CREATED)
-        return Response({'status': status.HTTP_400_BAD_REQUEST, 'data': serializer.errors }, status=status.HTTP_400_BAD_REQUEST) 
+            serializer = UtilisateurSerializer(user)
+            return Response({'status': status.HTTP_201_CREATED, 'success': True, 'message': 'Utilisateur enrégistré avec succès', 'results': serializer.data}, status=status.HTTP_201_CREATED)
 
+        return Response({'status': status.HTTP_400_BAD_REQUEST, 'success': False, 'message': 'Erreur de création de l\'utilisateur. Paramètres incomplèts !',} ,status=status.HTTP_400_BAD_REQUEST)
+
+        
 class UtilisateurDetailViewSet(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
     def get_object(self, id):

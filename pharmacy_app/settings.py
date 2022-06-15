@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
-from pathlib import Path
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,7 +26,7 @@ SECRET_KEY = 'django-insecure-tavds@y#gzw$&5fu(v4ufl&=xawf5#8&^u(yd-b!!8ruyt@hbd
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1']
+ALLOWED_HOSTS = ['127.0.0.1', '192.168.220.1']
 
 
 # Application definition
@@ -40,9 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'rest_framework',
     'corsheaders',
     'djoser',
+    'rest_framework',
 
     'pharmashop.apps.PharmashopConfig'
 ]
@@ -90,8 +89,8 @@ DATABASES = {
     'default': {
        'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'pharmacie',
-        'USER': 'jenifer',
-        'PASSWORD': 'jenifer',
+        'USER': 'patrick',
+        'PASSWORD': 'patrick',
         'HOST': '127.0.0.1',
         'PORT': '5432',
     }
@@ -132,11 +131,15 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-MEDIA_URL = 'media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'static')
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'static'),
+)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
@@ -150,8 +153,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
  
 REST_FRAMEWORK = {
+    "DEFAULT_PERMISSION_CLASSES": [
+        # 'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 1,
+    'PAGE_SIZE': 3,
 }
 
 
