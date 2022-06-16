@@ -1,5 +1,5 @@
 
-from math import radians, cos, sin, asin, sqrt
+
 
 from rest_framework import viewsets, status
 from rest_framework.response import Response
@@ -8,7 +8,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 import django
 
-from .models import Carnet, Symptome,Utilisateur,Categorie,\
+from .models import Utilisateur,Categorie,\
     Pharmacie,Medicament
 
 
@@ -16,37 +16,7 @@ from .models import Carnet, Symptome,Utilisateur,Categorie,\
 # Create your views here.
 
 
-#☺ Python 3 program to calculate Distance Between Two Points on Earth
 
-def distance(lat1, lat2, lon1, lon2):
-     
-    # The math module contains a function named
-    # radians which converts from degrees to radians.
-    lon1 = radians(lon1)
-    lon2 = radians(lon2)
-    lat1 = radians(lat1)
-    lat2 = radians(lat2)
-      
-    # Haversine formula
-    dlon = lon2 - lon1
-    dlat = lat2 - lat1
-    a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2
- 
-    c = 2 * asin(sqrt(a))
-    
-    # Radius of earth in kilometers. Use 3956 for miles
-    r = 6371
-      
-    # calculate the result
-    return(c * r)
-     
-     
-# driver code
-lat1 = 53.32055555555556
-lat2 = 53.31861111111111
-lon1 = -1.7297222222222221
-lon2 =  -1.6997222222222223
-print(distance(lat1, lat2, lon1, lon2), "K.M")
 
 
 from .serializers import PharmacieSerializers,UtilisateurSerializer,\
@@ -186,7 +156,7 @@ class CategorieDetailViewSet(viewsets.ViewSet):
 
 class UtilisateurViewSet(viewsets.ViewSet):
     permission_classes = [AllowAny]
-    def list(request, self):
+    def list(self, request):
         utilisateur = Utilisateur.objects.all()
         serializer = UtilisateurSerializer(utilisateur, many=True)
         return Response({'success': True, 'status':status.HTTP_200_OK, 'message': 'liste des utilisateurs','results':serializer.data}, status=status.HTTP_200_OK)
@@ -259,8 +229,6 @@ class MedicamentViewSet(viewsets.ViewSet):
         serializer = MedicamentSerialisers(data=request.data)
         print(request.data)
         if serializer.is_valid():
-
-            
             serializer.save()
             return Response({'success': True, 'status': status.HTTP_201_CREATED, 'message': 'Medicament crée avec success', 'results':serializer.data}, status = status.HTTP_201_CREATED)
         return Response({'status': status.HTTP_400_BAD_REQUEST, 'data': serializer.errors }, status=status.HTTP_400_BAD_REQUEST)

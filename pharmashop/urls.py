@@ -5,7 +5,7 @@ from pharmashop import views
 urlpatterns = [
 
     #gestion des Pharmacies
-    path("pharmacie", views.PharmacieViewSet.as_view({'get': 'list', 'post': 'post'})),
+    re_path(r"^pharmacie/$", views.PharmacieViewSet.as_view({'get': 'list', 'post': 'post'})),
     re_path(r"^pharmacie/(?P<id>\d+)$", views.PharmacieDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
 
     #gestion des categories
@@ -13,7 +13,7 @@ urlpatterns = [
     re_path(r"^categorie/(?P<id>\d+)$", views.CategorieDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
 
     #gestion des categories
-    path("utilisateur", views.UtilisateurViewSet.as_view({'get': 'list', 'post':'post'})),
+    re_path(r"^utilisateur/$", views.UtilisateurViewSet.as_view({'get': 'list', 'post':'post'})),
     # path("jwt/create", views.UtilisateurViewSet.as_view({'get': 'list', 'post':'post'})),
     re_path(r"^utilisateur/(?P<id>\d+)$", views.UtilisateurDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
 
