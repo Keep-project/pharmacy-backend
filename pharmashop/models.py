@@ -104,21 +104,20 @@ class Consultaion(models.Model):
     def __str__(self):
         return "{0}".format(self.symptome)
 
-class Carnet(models.Model):
-    message = models.CharField(max_length=255, null=False)
-    consultation = models.ForeignKey(Consultaion, on_delete=models.CASCADE)
-    created_at =models.DateTimeField(auto_now_add=True)
-    updated_at =models.DateTimeField(auto_now=True)        
-    
-    class Meta:
-        ordering=('-created_at',)
-
-    def __str__(self):
-        return "{0}".format(self.message)
-
 
 class Maladie(models.Model):
     libelle = models.CharField(max_length=255, null=False)
+    created_at =models.DateTimeField(auto_now_add=True)
+    updated_at =models.DateTimeField(auto_now=True)        
+    
+    class Meta:
+        ordering=('-created_at',)
+
+    def __str__(self):
+        return "{0}".format(self.libelle)        
+
+class Carnet(models.Model):
+    maladie = models.ForeignKey(Maladie, on_delete=models.CASCADE) 
     consultation = models.ForeignKey(Consultaion, on_delete=models.CASCADE)
     created_at =models.DateTimeField(auto_now_add=True)
     updated_at =models.DateTimeField(auto_now=True)        
@@ -127,7 +126,10 @@ class Maladie(models.Model):
         ordering=('-created_at',)
 
     def __str__(self):
-        return "{0}".format(self.libelle)
+        return "{0}".format(self.maladie)
+
+
+
 
             
 

@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 from  django.contrib.auth.models import User
-from .models import Carnet, Medicament, Symptome,Utilisateur,Categorie,Consultaion,Pharmacie
+from .models import Carnet, Maladie, Medicament, Symptome,Utilisateur,Categorie,Consultaion,Pharmacie
 
 
 class CategorieSerializers(serializers.ModelSerializer):
@@ -90,18 +90,30 @@ class ConsultationSerializers(serializers.ModelSerializer):
         fields = [
             'id',
             'user',
+            'symptome',
             'created_at',
             'updated_at'
         ]
         
+class MaladieSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = Maladie
+        fields = [
+            'id',
+            'libelle',
+            'created_at',
+            'updated_at'
+        ]        
+
+
 class CarnetSerializers(serializers.ModelSerializer):
     class Meta:
         model = Carnet
         fields = [
             'id',
-            'reponse',
+            'maladie',
             'consultation',
             'created_at',
             'updated_at'
-        ]        
+        ]
         

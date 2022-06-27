@@ -17,9 +17,26 @@ urlpatterns = [
     # path("jwt/create", views.UtilisateurViewSet.as_view({'get': 'list', 'post':'post'})),
     re_path(r"^utilisateur/(?P<id>\d+)$", views.UtilisateurDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
 
-    #gestion des categories
+    #gestion des medicaments
     path("medicament", views.MedicamentViewSet.as_view({'get': 'list',})),
     re_path(r"^medicament/(?P<id>\d+)$", views.MedicamentDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
 
+    #gestion des Symptomes
+    path("symptome/", views.SymptomeViewSet.as_view({'get': 'list','post':'post'})),
+    re_path(r"^symptome/(?P<id>\d+)$", views.SymptomeDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
+
+    #gestion des consultations
+    path("consultation/", views.ConsultationViewSet.as_view({'get': 'list','post':'post'})),
+    re_path(r"^consultation/(?P<id>\d+)$", views.ConsultationDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
+
+    # gestion des maladies
+    path("maladie/", views.MaladieViewSet.as_view({'get': 'list','post':'post'})),
+    re_path(r"^maladie/(?P<id>\d+)$", views.MaladieDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
+
+     # gestion des carnets
+    path("carnet/", views.CarnetViewSet.as_view({'get': 'list','post':'post'})),
+    re_path(r"^carnet/(?P<id>\d+)$", views.CaranetDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
+
     
 ]
+                      

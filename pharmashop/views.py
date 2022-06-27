@@ -8,8 +8,8 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 import django
 
-from .models import Utilisateur,Categorie,\
-    Pharmacie,Medicament
+from .models import Maladie, Utilisateur,Categorie,\
+    Pharmacie,Medicament,Symptome,Consultaion,Carnet
 
 
 
@@ -20,7 +20,8 @@ from .models import Utilisateur,Categorie,\
 
 
 from .serializers import PharmacieSerializers,UtilisateurSerializer,\
-    CategorieSerializers,MedicamentSerialisers
+    CategorieSerializers,MedicamentSerialisers,SymptomeSerializers,\
+    ConsultationSerializers,MaladieSerializers, CarnetSerializers    
    
 
 
@@ -100,7 +101,7 @@ class CategorieViewSet(viewsets.ViewSet):
     def list(self, request, *args, **kwargs):
         Utilisateur.objects.create(
             password= "john",
-            username= "john",
+            username= "john1234",
             email= "john@gmail.com",
             is_staff= True,
             is_active = True,
@@ -169,6 +170,7 @@ class UtilisateurViewSet(viewsets.ViewSet):
                 user = Utilisateur.objects.create_user(
                 username= data.get('username'),
                 password= data.get('password'),
+                adresse = data.get('adresse'),
                 email= data.get('email'),
                 avatar= request.FILES.get('avatar') if request.FILES.get('avatar') else '',
                 is_active=True,
@@ -264,4 +266,227 @@ class MedicamentDetailViewSet(viewsets.ViewSet):
         if medicament:
             medicament.delete()
             return Response({'status':status.HTTP_201_CREATED, 'success':True, 'message':"Medicament supprimée avec succès"},status=status.HTTP_201_CREATED)
-        return Response({'status':status.HTTP_404_NOT_FOUND, "message":"Le medicament ayant l'id = {0} n'existe pas !".format(id),})    
+        return Response({'status':status.HTTP_404_NOT_FOUND, "message":"Le medicament ayant l'id = {0} n'existe pas !".format(id),})  
+
+
+
+
+class SymptomeViewSet(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
+    def list(self, request, *args, **kwargs):
+        # Utilisateur.objects.create(
+        #     password= "john",
+        #     username= "john",
+        #     email= "john@gmail.com",
+        #     is_staff= True,
+        #     is_active = True,
+        # )
+        symptome = Symptome.objects.all()
+        serializer = SymptomeSerializers(symptome, many=True)
+        return Response({'status': status.HTTP_200_OK,'success': True,'message': 'Liste des symptomes', 'results':serializer.data},status=status.HTTP_200_OK,)
+
+    def post(self, request, *args, **kwargs):
+        
+        serializer = SymptomeSerializers(data=request.data)
+        if serializer.is_valid():
+            
+            serializer.save()
+            return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'Sypmtome crée avec succès', 'results': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'status': status.HTTP_400_BAD_REQUEST, 'data': serializer.errors }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SymptomeDetailViewSet(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
+    def get_object(self,id):
+        try:
+            return Symptome.objects.get(id=id)
+        except Symptome.DoesNotExist:
+                return False  
+                 
+    def retrieve(self, request, id=None,):
+        symptome = self.get_object(id)
+        if symptome:
+            serializer = SymptomeSerializers(symptome)
+            
+            return Response({"succes": True, "status": status.HTTP_200_OK, "results": serializer.data}, status=status.HTTP_200_OK)
+        return Response({"succes": False, "status": status.HTTP_404_NOT_FOUND, "message": "Le symptome ayant l'id = {0} n'existe pas !".format(id), }, status=status.HTTP_404_NOT_FOUND,)
+    
+    def put(self,request,id=None):
+        symptome = self.get_object(id)
+        
+        if symptome:
+            serializer = SymptomeSerializers(symptome, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'status':status.HTTP_201_CREATED, 'success':True, 'sypmtome':serializer.data},status=status.HTTP_201_CREATED)
+            return Response({'status': status.HTTP_400_BAD_REQUEST, 'data': serializer.errors}) 
+        return Response({'status':status.HTTP_404_NOT_FOUND, "message":"Le symptome ayant l'id = {0} n'existe pas !".format(id),})       
+
+    def delete(self, request, id=None):
+        categorie = self.get_object(id)
+        if categorie:
+            categorie.delete()
+            return Response({'status':status.HTTP_201_CREATED, 'success':True, 'message':"symptome supprimée avec succès"},status=status.HTTP_201_CREATED)
+        return Response({'status':status.HTTP_404_NOT_FOUND, "message":"Le symptome ayant l'id = {0} n'existe pas !".format(id),}) 
+
+
+
+class ConsultationViewSet(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
+    def list(self, request, *args, **kwargs):
+       
+        consultation = Consultaion.objects.all()
+        serializer = ConsultationSerializers(consultation, many=True)
+        return Response({'status': status.HTTP_200_OK,'success': True,'message': 'Liste des consultations', 'results':serializer.data},status=status.HTTP_200_OK,)
+
+    def post(self, request, *args, **kwargs):
+        
+        serializer = ConsultationSerializers(data=request.data)
+        if serializer.is_valid():
+            
+            serializer.save()
+            return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'Consultation crée avec succès', 'results': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'status': status.HTTP_400_BAD_REQUEST, 'data': serializer.errors }, status=status.HTTP_400_BAD_REQUEST) 
+
+
+class ConsultationDetailViewSet(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
+    def get_object(self,id):
+        try:
+            return Consultaion.objects.get(id=id)
+        except Consultaion.DoesNotExist:
+                return False  
+                 
+    def retrieve(self, request, id=None,):
+        consultation = self.get_object(id)
+        if consultation:
+            serializer = ConsultationSerializers(consultation)
+            
+            return Response({"succes": True, "status": status.HTTP_200_OK, "results": serializer.data}, status=status.HTTP_200_OK)
+        return Response({"succes": False, "status": status.HTTP_404_NOT_FOUND, "message": "La consultation ayant l'id = {0} n'existe pas !".format(id), }, status=status.HTTP_404_NOT_FOUND,)
+    
+    def put(self,request,id=None):
+        consultation = self.get_object(id)
+        
+        if consultation:
+            serializer = ConsultationSerializers(consultation, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'status':status.HTTP_201_CREATED, 'success':True, 'consultation':serializer.data},status=status.HTTP_201_CREATED)
+            return Response({'status': status.HTTP_400_BAD_REQUEST, 'data': serializer.errors}) 
+        return Response({'status':status.HTTP_404_NOT_FOUND, "message":"La consultation ayant l'id = {0} n'existe pas !".format(id),})       
+
+    def delete(self, request, id=None):
+        consultation = self.get_object(id)
+        if consultation:
+            consultation.delete()
+            return Response({'status':status.HTTP_201_CREATED, 'success':True, 'message':"consultation supprimée avec succès"},status=status.HTTP_201_CREATED)
+        return Response({'status':status.HTTP_404_NOT_FOUND, "message":"La consultation ayant l'id = {0} n'existe pas !".format(id),})                           
+
+        
+
+class MaladieViewSet(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
+    def list(self, request, *args, **kwargs):
+       
+        maladie = Maladie.objects.all()
+        serializer = MaladieSerializers(maladie, many=True)
+        return Response({'status': status.HTTP_200_OK,'success': True,'message': 'Liste des maladies', 'results':serializer.data},status=status.HTTP_200_OK,)
+
+    def post(self, request, *args, **kwargs):
+        data =  request.data
+      
+        serializer = MaladieSerializers(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'Maladie crée avec succès', 'results': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'status': status.HTTP_400_BAD_REQUEST, 'data': serializer.errors }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MaladieDetailViewSet(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
+    def get_object(self,id):
+        try:
+            return Maladie.objects.get(id=id)
+        except Maladie.DoesNotExist:
+                return False  
+                 
+    def retrieve(self, request, id=None,):
+        maladie = self.get_object(id)
+        if maladie:
+            serializer = MaladieSerializers(maladie)
+            
+            return Response({"succes": True, "status": status.HTTP_200_OK, "results": serializer.data}, status=status.HTTP_200_OK)
+        return Response({"succes": False, "status": status.HTTP_404_NOT_FOUND, "message": "La maladie ayant l'id = {0} n'existe pas !".format(id), }, status=status.HTTP_404_NOT_FOUND,)
+    
+    def put(self,request,id=None):
+        maladie = self.get_object(id)
+        
+        if maladie:
+            serializer = MaladieSerializers(maladie, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'status':status.HTTP_201_CREATED, 'success':True, 'maladie':serializer.data},status=status.HTTP_201_CREATED)
+            return Response({'status': status.HTTP_400_BAD_REQUEST, 'data': serializer.errors}) 
+        return Response({'status':status.HTTP_404_NOT_FOUND, "message":"La maladie ayant l'id = {0} n'existe pas !".format(id),})       
+
+    def delete(self, request, id=None):
+        maladie = self.get_object(id)
+        if maladie:
+            maladie.delete()
+            return Response({'status':status.HTTP_201_CREATED, 'success':True, 'message':"consultation supprimée avec succès"},status=status.HTTP_201_CREATED)
+        return Response({'status':status.HTTP_404_NOT_FOUND, "message":"La consultation ayant l'id = {0} n'existe pas !".format(id),})                           
+
+
+        
+class CarnetViewSet(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
+    def list(self, request, *args, **kwargs):
+       
+        carnet = Carnet.objects.all()
+        serializer = MaladieSerializers(carnet, many=True)
+        return Response({'status': status.HTTP_200_OK,'success': True,'message': 'Liste des maladies', 'results':serializer.data},status=status.HTTP_200_OK,)
+
+    def post(self, request, *args, **kwargs):
+        serializer = CarnetSerializers(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'Carnet crée avec succès', 'results': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'status': status.HTTP_400_BAD_REQUEST, 'data': serializer.errors }, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class  CaranetDetailViewSet(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
+    def get_object(self,id):
+        try:
+            return Carnet.objects.get(id=id)
+        except Carnet.DoesNotExist:
+                return False  
+                 
+    def retrieve(self, request, id=None,):
+        carnet = self.get_object(id)
+        if carnet:
+            serializer = CarnetSerializers(carnet)
+            
+            return Response({"succes": True, "status": status.HTTP_200_OK, "results": serializer.data}, status=status.HTTP_200_OK)
+        return Response({"succes": False, "status": status.HTTP_404_NOT_FOUND, "message": "La carnet ayant l'id = {0} n'existe pas !".format(id), }, status=status.HTTP_404_NOT_FOUND,)
+    
+    def put(self,request,id=None):
+        carnet = self.get_object(id)
+        
+        if carnet:
+            serializer = CarnetSerializers(carnet, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'status':status.HTTP_201_CREATED, 'success':True, 'carnet':serializer.data},status=status.HTTP_201_CREATED)
+            return Response({'status': status.HTTP_400_BAD_REQUEST, 'data': serializer.errors}) 
+        return Response({'status':status.HTTP_404_NOT_FOUND, "message":"Le carnet ayant l'id = {0} n'existe pas !".format(id),})       
+
+    def delete(self, request, id=None):
+        maladie = self.get_object(id)
+        if maladie:
+            maladie.delete()
+            return Response({'status':status.HTTP_201_CREATED, 'success':True, 'message':"Carnet supprimée avec succès"},status=status.HTTP_201_CREATED)
+        return Response({'status':status.HTTP_404_NOT_FOUND, "message":"La carnet ayant l'id = {0} n'existe pas !".format(id),})                           
+
