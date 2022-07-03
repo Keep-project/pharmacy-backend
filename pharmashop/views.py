@@ -1,6 +1,8 @@
 
 
 
+from tracemalloc import start
+from requests import request
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -29,6 +31,7 @@ from .serializers import PharmacieSerializers,UtilisateurSerializer,\
 
 
 class PharmacieViewSet(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
     def list(self, request):
         pharmacie = Pharmacie.objects.all()
         Serializer = PharmacieSerializers(pharmacie, many=True)
@@ -42,29 +45,8 @@ class PharmacieViewSet(viewsets.ViewSet):
             serializer.save()
             return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'pharmacies créée avec succès', 'results': serializer.data}, status=status.HTTP_200_OK)
         return Response({'status': status.HTTP_400_BAD_REQUEST, 'data': serializer.errors }, status=status.HTTP_400_BAD_REQUEST)    
-
-    # def post(request, self, *args, **kwarg):
-    #     serializer = PharmacieSerializers(data = request.data)
-    #     if serializer.is_valid():
-    #         pharmacie = Pharmacie(
-    #             nom = request.data.get('nom'),
-    #             localisation = request.data.get('localisation'),
-    #             tel = request.data.get('tel'),
-    #             latitude = request.data.get('latitude'),
-    #             longitude = request.data.get('longitude'),
-    #             h_ouverture = request.data.get('h_ouverture'),
-    #             h_fermeture = request.data.get('h_fermeture'),
-    #             user = request.data.get('user')
-
-    #         )
-    #         pharmacie.save()
-    #         serializer = PharmacieSerializers
-
-    #     return Response({'status': status.HTTP_200_OK,'success': True,'message': 'Pharmacie crée avec success','results': serializer.data,},status=status.HTTP_200_OK,)
-        # return Response({'status': status.HTTP_200_OK,'success': True,'message': 'error','results': error(),},status=status.HTTP_404_NOT_FOUND,)
-
-
 class PharmacieDetailViewSet(viewsets.ViewSet):
+    
     def get_object(self, id):
         try:
            return Pharmacie.objects.get(id=id)
@@ -96,8 +78,19 @@ class PharmacieDetailViewSet(viewsets.ViewSet):
         return Response({'status':status.HTTP_404_NOT_FOUND, "message":"La Pharmacie ayant l'id = {0} n'existe pas !".format(id),})    
 
 
-class CategorieViewSet(viewsets.ViewSet):
 
+class ListPhamacieForUser(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
+
+    def list(self, request, *args, **kwargs):
+        listPhamacie = Pharmacie.objects.filter(user=request.user.id)
+        Serializer = PharmacieSerializers(listPhamacie, many=True)
+        return Response({'status': status.HTTP_200_OK,'success': True,'message': "Liste des pharmacies d'un utilisateur",'results': Serializer.data,},status=status.HTTP_200_OK,)
+
+   
+
+class CategorieViewSet(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
     def list(self, request, *args, **kwargs):
         Utilisateur.objects.create(
             password= "john",
@@ -152,7 +145,8 @@ class CategorieDetailViewSet(viewsets.ViewSet):
             return Response({'status':status.HTTP_201_CREATED, 'success':True, 'message':"Categorie supprimée avec succès"},status=status.HTTP_201_CREATED)
         return Response({'status':status.HTTP_404_NOT_FOUND, "message":"La categorie ayant l'id = {0} n'existe pas !".format(id),})       
 
-            
+
+           
             
 
 class UtilisateurViewSet(viewsets.ViewSet):
@@ -221,6 +215,7 @@ class UtilisateurDetailViewSet(viewsets.ViewSet):
 
 
 class MedicamentViewSet(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
     def list(self, request):
         medicament = Medicament.objects.all()
         serializer = MedicamentSerialisers(medicament, many=True)
@@ -268,8 +263,20 @@ class MedicamentDetailViewSet(viewsets.ViewSet):
             return Response({'status':status.HTTP_201_CREATED, 'success':True, 'message':"Medicament supprimée avec succès"},status=status.HTTP_201_CREATED)
         return Response({'status':status.HTTP_404_NOT_FOUND, "message":"Le medicament ayant l'id = {0} n'existe pas !".format(id),})  
 
+class ListMedicamentForPhamacie(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
+    def list(self, request, idPharmacie=None, *args, **kwargs):
+        listmedicament = Medicament.objects.filter(pharmacie__id=int(idPharmacie))
+        Serializer = MedicamentSerialisers(listmedicament, many=True)
+        return Response({'status': status.HTTP_200_OK,'success': True,'message': "liste des médicaments d'une pharmacie",'results': Serializer.data,},status=status.HTTP_200_OK,)
 
+class ListCategorieForMedicament(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
 
+    def list(self, request, idCategorie=None, *args, **kwargs):
+        listCategorie = Medicament.objects.filter(categorie__id=(idCategorie))
+        Serializer = MedicamentSerialisers(listCategorie, many=True)
+        return Response({'status': status.HTTP_200_OK,'success': True,'message': "Liste des medicaments d'une Categorie  ",'results': Serializer.data,},status=status.HTTP_200_OK,)
 
 class SymptomeViewSet(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
@@ -383,7 +390,13 @@ class ConsultationDetailViewSet(viewsets.ViewSet):
             return Response({'status':status.HTTP_201_CREATED, 'success':True, 'message':"consultation supprimée avec succès"},status=status.HTTP_201_CREATED)
         return Response({'status':status.HTTP_404_NOT_FOUND, "message":"La consultation ayant l'id = {0} n'existe pas !".format(id),})                           
 
-        
+
+class ListconsultationForUser(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
+    def list(self, request, *args, **kwargs):
+        listConsultation = Consultaion.objects.filter(user=request.user.id)
+        Serializer = ConsultationSerializers(listConsultation, many=True)
+        return Response({'status': status.HTTP_200_OK,'success': True,'message': "Liste des consultations d'un utilisateur",'results': Serializer.data,},status=status.HTTP_200_OK,)    
 
 class MaladieViewSet(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
@@ -444,7 +457,7 @@ class CarnetViewSet(viewsets.ViewSet):
     def list(self, request, *args, **kwargs):
        
         carnet = Carnet.objects.all()
-        serializer = MaladieSerializers(carnet, many=True)
+        serializer = CarnetSerializers(carnet, many=True)
         return Response({'status': status.HTTP_200_OK,'success': True,'message': 'Liste des maladies', 'results':serializer.data},status=status.HTTP_200_OK,)
 
     def post(self, request, *args, **kwargs):
@@ -490,3 +503,10 @@ class  CaranetDetailViewSet(viewsets.ViewSet):
             return Response({'status':status.HTTP_201_CREATED, 'success':True, 'message':"Carnet supprimée avec succès"},status=status.HTTP_201_CREATED)
         return Response({'status':status.HTTP_404_NOT_FOUND, "message":"La carnet ayant l'id = {0} n'existe pas !".format(id),})                           
 
+class CarnetForUser(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
+    def carnet(self, request, *args, **kwargs):
+        consultaion = Consultaion.objects.filter(user__id=request.user.id)[0:1]
+        canet = Carnet.objects.filter(user=request.user.id)
+        Serializer = CarnetSerializers(canet, many=True)
+        return Response({'status': status.HTTP_200_OK,'success': True,'message': "Carnet d'un utilisateur",'results': Serializer.data,},status=status.HTTP_200_OK,)

@@ -59,7 +59,7 @@ class Pharmacie(models.Model):
     created_at =models.DateTimeField(auto_now_add=True)
     updated_at =models.DateTimeField(auto_now=True)
 
-    class Meta:
+    class Meta:        
         ordering=('-created_at',)
     
     def __str__(self):
@@ -89,11 +89,22 @@ class Medicament(models.Model):
     def __str__(self):
         return "{0}".format(self.nom)
 
+class Maladie(models.Model):
+    libelle = models.CharField(max_length=255, null=False)
+    created_at =models.DateTimeField(auto_now_add=True)
+    updated_at =models.DateTimeField(auto_now=True)        
+    
+    class Meta:
+        ordering=('-created_at',)
+
+    def __str__(self):
+        return "{0}".format(self.libelle)        
         
 
 class Consultaion(models.Model):
     symptome = models.ForeignKey(Symptome, on_delete=models.CASCADE)
     user = models.ForeignKey(Utilisateur, on_delete=models.CASCADE)
+    maladie = models.ManyToManyField(Maladie, through="Carnet", blank=False)
     created_at =models.DateTimeField(auto_now_add=True)
     updated_at =models.DateTimeField(auto_now=True)
 
@@ -105,20 +116,11 @@ class Consultaion(models.Model):
         return "{0}".format(self.symptome)
 
 
-class Maladie(models.Model):
-    libelle = models.CharField(max_length=255, null=False)
-    created_at =models.DateTimeField(auto_now_add=True)
-    updated_at =models.DateTimeField(auto_now=True)        
-    
-    class Meta:
-        ordering=('-created_at',)
-
-    def __str__(self):
-        return "{0}".format(self.libelle)        
 
 class Carnet(models.Model):
     maladie = models.ForeignKey(Maladie, on_delete=models.CASCADE) 
     consultation = models.ForeignKey(Consultaion, on_delete=models.CASCADE)
+    user = models.IntegerField(blank=False, null=False, default=1)
     created_at =models.DateTimeField(auto_now_add=True)
     updated_at =models.DateTimeField(auto_now=True)        
     
