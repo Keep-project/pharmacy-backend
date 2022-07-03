@@ -69,6 +69,7 @@ class MedicamentSerialisers(serializers.ModelSerializer):
             'posologie',
             'categorie',
             'user',
+            'voix',
             'pharmacie',
             'created_at',
             'updated_at'

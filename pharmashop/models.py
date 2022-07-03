@@ -68,6 +68,12 @@ class Pharmacie(models.Model):
 
 class Medicament(models.Model):
 
+    choices = (
+        (0, 'Enfant'),
+        (1, 'Adolescent'),
+        (2, 'Adulte'),
+        (3, 'Tous'),
+    )
     nom = models.CharField(max_length=255, null=False)
     prix = models.DecimalField(null=False, blank=False, decimal_places=5, max_digits=10)
     marque = models.CharField(max_length=255, null=False)
@@ -79,7 +85,8 @@ class Medicament(models.Model):
     posologie = models.CharField(max_length=255)
     categorie=models.ForeignKey(Categorie, related_name="medicaments", on_delete=models.CASCADE)
     user = models.ForeignKey(Utilisateur, related_name= "medicaments", on_delete=models.CASCADE, null=True, blank=True)
-    pharmacie = models.ForeignKey(Pharmacie, on_delete=models.CASCADE, null=False, blank=False)
+    pharmacie = models.ForeignKey(Pharmacie, on_delete=models.CASCADE, null=False, blank=False),
+    voix = models.IntegerField(default=3, choices=choices )
     created_at =models.DateTimeField(auto_now_add=True)
     updated_at =models.DateTimeField(auto_now=True)
 

@@ -17,9 +17,6 @@ from .models import Maladie, Utilisateur,Categorie,\
 # Create your views here.
 
 
-
-
-
 from .serializers import PharmacieSerializers,UtilisateurSerializer,\
     CategorieSerializers,MedicamentSerialisers,SymptomeSerializers,\
     ConsultationSerializers,MaladieSerializers, CarnetSerializers    
@@ -74,8 +71,6 @@ class PharmacieDetailViewSet(viewsets.ViewSet):
             pharmacie.delete()
             return Response({'status':status.HTTP_204_NO_CONTENT, 'success':True, 'message':"Pharmacie supprimée avec succès"},status=status.HTTP_201_CREATED)
         return Response({'success' : False, 'status': status.HTTP_404_NOT_FOUND, "message":"La Pharmacie ayant l'id = {0} n'existe pas !".format(id),})    
-
-
 
 class ListPhamacieForUser(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
@@ -175,7 +170,6 @@ class UtilisateurDetailViewSet(viewsets.ViewSet):
         utilisateur = self.get_object(id) 
         serializer = UtilisateurSerializer(utilisateur)
         if utilisateur:
-             
             return Response({"succes": True, "status": status.HTTP_200_OK, "results": serializer.data}, status=status.HTTP_200_OK)
         return Response({"succes": False, "status": status.HTTP_404_NOT_FOUND, "message": "L'utilisateur ayant l'id = {0} n'existe pas !".format(id), }, status=status.HTTP_404_NOT_FOUND,)
 
@@ -184,7 +178,7 @@ class UtilisateurDetailViewSet(viewsets.ViewSet):
         if utilisateur:
             serializer = UtilisateurSerializer(utilisateur, data=request.data)
             if serializer.is_valid():
-                serializer.save()
+                serializer.save(is_active= True)
                 return Response({'status': status.HTTP_201_CREATED,'success': True, "message" : 'Mise à jour effectuée avec succès',  "results": serializer.data}, status=status.HTTP_200_OK)
             return Response({'status': status.HTTP_400_BAD_REQUEST, 'success': True,  "message" : 'Une erreur est survenue lors de la mise à jour', 'results': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         return Response({'status': status.HTTP_404_NOT_FOUND, 'success': True, "message": "L'utilisateur ayant l'id = {0} n'existe pas !".format(id),}, status=status.HTTP_404_NOT_FOUND,)
@@ -210,7 +204,7 @@ class MedicamentViewSet(viewsets.ViewSet):
         if serializer.is_valid():
             serializer.save()
             return Response({'success': True, 'status': status.HTTP_201_CREATED, 'message': 'Medicament crée avec succès', 'results':serializer.data}, status = status.HTTP_201_CREATED)
-        return Response({'status': status.HTTP_400_BAD_REQUEST, 'success': False, 'message': "Erreur de création d'un médicament. Paramètres incomplèts !",} ,status=status.HTTP_400_BAD_REQUEST)
+        return Response({'status': status.HTTP_400_BAD_REQUEST, 'success': False, 'message': "Erreur de création d'un médicament. Paramètres incomplèts !", 'results': serializer.errors} ,status=status.HTTP_400_BAD_REQUEST)
 
 
 class MedicamentDetailViewSet(viewsets.ViewSet):
