@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
-
 # Create your models here.
 # liste des models
 #  -pharmacie
@@ -15,7 +14,7 @@ from django.contrib.auth.models import User
 #  -carnet (portant les informations de la consultation)
 
 
-Base_URL = 'http://127.0.0.1:8000'
+BASE_URL = 'http://127.0.0.1:8000'
 
 
 class Categorie(models.Model):
@@ -24,16 +23,37 @@ class Categorie(models.Model):
     def __str__(self):
         return "{0}".format(self.libelle) 
 
-
 class Utilisateur(User):
     adresse = models.CharField(max_length=255)
-    avatar = models.FileField(upload_to='avatar/', blank=True, null=True)
+    avatar = models.FileField(upload_to='avatars/', blank=True, null=True)
     status = models.CharField(max_length=255, blank=False, default="user")
     experience = models.CharField(max_length=255,blank=False,  default=0)
 
 
     def __str__(self):
-        return "{0}".format(self.username)    
+        return "{0}".format(self.username) 
+
+class Pharmacie(models.Model):
+    libelle = models.CharField(max_length=10, default='')
+    nom = models.CharField(null=False, max_length=255, default='')
+    localisation = models.CharField(null=False, max_length=255, default='')
+    tel = models.CharField(null=False, max_length=255, default='')
+    latitude = models.FloatField(null=False,default=0)
+    longitude = models.FloatField(null=False, default=0)
+    h_ouverture = models.DateTimeField(null=True,)
+    h_fermeture = models.DateTimeField(null=True)
+    user = models.ForeignKey(Utilisateur, related_name="pharmacies",on_delete=models.CASCADE, null=False, blank=False)
+
+    created_at =models.DateTimeField(auto_now_add=True,)
+    updated_at =models.DateTimeField(auto_now=True,)
+    
+    def __str__(self):
+        return "{0}".format(self.nom)  
+
+    class Meta:
+        ordering=('-created_at',)
+
+       
 
 class Symptome(models.Model):
     libelle= models.CharField(max_length=50)
@@ -47,32 +67,13 @@ class Symptome(models.Model):
         return "{0}".format(self.libelle)    
 
 
-class Pharmacie(models.Model):
-    nom = models.CharField(null=False, max_length=255)
-    localisation = models.CharField(null=False, max_length=255)
-    tel = models.CharField(null=False, max_length=255)
-    latitude = models.FloatField(null=False,default=0)
-    longitude = models.FloatField(null=False, default=0)
-    h_ouverture = models.DateTimeField(null=True)
-    h_fermeture = models.DateTimeField(null=True)
-    user = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, null=False, blank=False)
-    created_at =models.DateTimeField(auto_now_add=True)
-    updated_at =models.DateTimeField(auto_now=True)
-
-    class Meta:        
-        ordering=('-created_at',)
-    
-    def __str__(self):
-        return "{0}".format(self.nom)  
-
 
 class Medicament(models.Model):
 
     choices = (
-        (0, 'Enfant'),
-        (1, 'Adolescent'),
-        (2, 'Adulte'),
-        (3, 'Tous'),
+        (0, 'bucale'),
+        (1, 'injection'),
+        (2, 'anale')
     )
     nom = models.CharField(max_length=255, null=False)
     prix = models.DecimalField(null=False, blank=False, decimal_places=5, max_digits=10)
@@ -83,10 +84,10 @@ class Medicament(models.Model):
     qte_stock = models.IntegerField(null=False, blank=False)
     description = models.CharField(max_length=255)
     posologie = models.CharField(max_length=255)
-    categorie=models.ForeignKey(Categorie, related_name="medicaments", on_delete=models.CASCADE)
+    voix = models.IntegerField(default=0, choices=choices )
+    categorie= models.ForeignKey(Categorie, related_name="medicaments", on_delete=models.CASCADE)
     user = models.ForeignKey(Utilisateur, related_name= "medicaments", on_delete=models.CASCADE, null=True, blank=True)
-    pharmacie = models.ForeignKey(Pharmacie, on_delete=models.CASCADE, null=False, blank=False),
-    voix = models.IntegerField(default=3, choices=choices )
+    pharmacie = models.ForeignKey(Pharmacie, related_name="medicaments", on_delete=models.CASCADE, null=True, blank=True)
     created_at =models.DateTimeField(auto_now_add=True)
     updated_at =models.DateTimeField(auto_now=True)
 
@@ -96,6 +97,11 @@ class Medicament(models.Model):
     def __str__(self):
         return "{0}".format(self.nom)
 
+    def get_image_url(self):
+
+        if self.image:
+            return BASE_URL + self.image.url
+        return ''
 class Maladie(models.Model):
     libelle = models.CharField(max_length=255, null=False)
     created_at =models.DateTimeField(auto_now_add=True)

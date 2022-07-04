@@ -2,6 +2,7 @@
 
 from django.urls import path, re_path
 from pharmashop import views 
+
 urlpatterns = [
 
     #gestion des Pharmacies
@@ -41,7 +42,7 @@ urlpatterns = [
 
      # gestion des carnets
     path("carnet/", views.CarnetViewSet.as_view({'get': 'list','post':'post'})),
-    re_path(r"^carnet/(?P<id>\d+)$", views.CaranetDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
+    re_path(r"^carnet/(?P<id>\d+)$", views.CarnetDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
 
     
 ]

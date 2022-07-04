@@ -2,24 +2,41 @@
 
 from rest_framework import serializers
 from  django.contrib.auth.models import User
-from .models import Carnet, Maladie, Medicament, Symptome,Utilisateur,Categorie,Consultaion,Pharmacie
+from pharmashop import models
 
 
 class CategorieSerializers(serializers.ModelSerializer):
 
 
     class Meta:
-        model = Categorie
+        model = models.Categorie
         fields = [
             'id',
             'libelle'
-            
+        ]
+
+class CategorieTestSerializers(serializers.ModelSerializer):
+
+
+    class Meta:
+        model = models.Pharmacie
+        fields = [
+            'id',
+            'nom'
+        ]
+
+class SymptomeSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = models.Symptome
+        fields = [
+            'id',
+            'libelle'
         ]
 
 class UtilisateurSerializer(serializers.ModelSerializer):
     
     class Meta:
-        model = Utilisateur
+        model = models.Utilisateur
         fields = [
             'id',
             'username',
@@ -36,9 +53,10 @@ class UtilisateurSerializer(serializers.ModelSerializer):
         ]   
 
 
+
 class PharmacieSerializers(serializers.ModelSerializer):
     class Meta:
-        model = Pharmacie
+        model = models.Pharmacie
         fields = [
             'id',
             'nom',
@@ -55,14 +73,14 @@ class PharmacieSerializers(serializers.ModelSerializer):
 
 class MedicamentSerialisers(serializers.ModelSerializer):
     class Meta:
-        model = Medicament
+        model = models.Medicament
         fields = [
             'id',
             'nom',
             'prix',
             'marque',
             'date_exp',
-            'image',
+            'get_image_url',
             'masse',
             'qte_stock',
             'description',
@@ -75,19 +93,11 @@ class MedicamentSerialisers(serializers.ModelSerializer):
             'updated_at'
         ]  
 
-class SymptomeSerializers(serializers.ModelSerializer):
-
-
-    class Meta:
-        model = Symptome
-        fields = [
-            'id',
-            'libelle'
-        ]           
+           
 
 class ConsultationSerializers(serializers.ModelSerializer):
     class Meta:
-        model = Consultaion
+        model = models.Consultaion
         fields = [
             'id',
             'user',
@@ -98,7 +108,7 @@ class ConsultationSerializers(serializers.ModelSerializer):
         
 class MaladieSerializers(serializers.ModelSerializer):
     class Meta:
-        model = Maladie
+        model = models.Maladie
         fields = [
             'id',
             'libelle',
@@ -109,7 +119,7 @@ class MaladieSerializers(serializers.ModelSerializer):
 
 class CarnetSerializers(serializers.ModelSerializer):
     class Meta:
-        model = Carnet
+        model = models.Carnet
         fields = [
             'id',
             'maladie',
