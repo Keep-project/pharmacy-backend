@@ -40,7 +40,7 @@ urlpatterns = [
     path("maladie/", views.MaladieViewSet.as_view({'get': 'list','post':'post'})),
     re_path(r"^maladie/(?P<id>\d+)$", views.MaladieDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
 
-     # gestion des carnets
+    # gestion des carnets
     path("carnet/", views.CarnetViewSet.as_view({'get': 'list','post':'post'})),
     re_path(r"^carnet/(?P<id>\d+)$", views.CarnetDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
 

@@ -1,5 +1,4 @@
 
-from requests import request
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
@@ -130,7 +129,7 @@ class UtilisateurViewSet(viewsets.ViewSet):
                 user = models.Utilisateur.objects.create_user(
                 username= data.get('username'),
                 password= data.get('password'),
-                adresse = data.get('adresse'),
+                adresse = data.get('adresse') if data.get('adresse') else '',
                 email= data.get('email'),
                 avatar= request.FILES.get('avatar') if request.FILES.get('avatar') else '',
                 is_active=True,

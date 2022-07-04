@@ -24,7 +24,7 @@ class Categorie(models.Model):
         return "{0}".format(self.libelle) 
 
 class Utilisateur(User):
-    adresse = models.CharField(max_length=255)
+    adresse = models.CharField(max_length=255, default='ras')
     avatar = models.FileField(upload_to='avatars/', blank=True, null=True)
     status = models.CharField(max_length=255, blank=False, default="user")
     experience = models.CharField(max_length=255,blank=False,  default=0)
