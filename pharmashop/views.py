@@ -191,7 +191,7 @@ class MedicamentViewSet(viewsets.GenericViewSet):
     def post(self,request, *args, **kwarg):
         serializer = serializers.MedicamentSerialisers(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(image=request.FILES.get('image'))
             return Response({'success': True, 'status': status.HTTP_201_CREATED, 'message': 'Medicament crée avec succès', 'results':serializer.data}, status = status.HTTP_201_CREATED)
         return Response({'status': status.HTTP_400_BAD_REQUEST, 'success': False, 'message': "Erreur de création d'un médicament. Paramètres incomplèts !", 'results': serializer.errors} ,status=status.HTTP_400_BAD_REQUEST)
 
