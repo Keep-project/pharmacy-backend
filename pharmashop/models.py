@@ -14,7 +14,7 @@ from django.contrib.auth.models import User
 #  -carnet (portant les informations de la consultation)
 
 
-BASE_URL = 'http://127.0.0.1:8000'
+BASE_URL = 'http://192.168.220.1:8000'
 
 
 class Categorie(models.Model):
@@ -101,7 +101,8 @@ class Medicament(models.Model):
 
         if self.image:
             return BASE_URL + self.image.url
-        return ''
+        return BASE_URL + "/media/images/default-image.jpg"
+
 class Maladie(models.Model):
     libelle = models.CharField(max_length=255, null=False)
     created_at =models.DateTimeField(auto_now_add=True)
