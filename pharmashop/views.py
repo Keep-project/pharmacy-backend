@@ -178,12 +178,14 @@ class UtilisateurDetailViewSet(viewsets.ViewSet):
         return Response({'status':status.HTTP_404_NOT_FOUND, "message": "L'utilisateur ayant l'id = {0} n'existe pas !".format(id),}, status=status.HTTP_404_NOT_FOUND,)
 
 
-class MedicamentViewSet(viewsets.ViewSet):
+class MedicamentViewSet(viewsets.GenericViewSet):
     authentication_classes = [JWTAuthentication]
     def list(self, request):
-        medicament = models.Medicament.objects.all()
-        serializer = serializers.MedicamentSerialisers(medicament, many=True)
-        return Response({'success': True, 'status':status.HTTP_200_OK, 'message': 'liste des medicaments', 'results': serializer.data}, status=status.HTTP_200_OK)
+        medicaments = models.Medicament.objects.all()
+        page = self.paginate_queryset(medicaments)
+        serializer = serializers.MedicamentSerialisers(page, many=True)
+        # return Response({'success': True, 'status':status.HTTP_200_OK, 'message': 'liste des medicaments', 'results': serializer.data}, status=status.HTTP_200_OK)
+        return self.get_paginated_response(serializer.data)
 
 
     def post(self,request, *args, **kwarg):
@@ -227,8 +229,8 @@ class MedicamentDetailViewSet(viewsets.ViewSet):
 class ListMedicamentForPhamacie(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
     def list(self, request, idPharmacie=None, *args, **kwargs):
-        listmedicament = models.Medicament.objects.filter(pharmacie__id=int(idPharmacie))
-        Serializer = serializers.MedicamentSerialisers(listmedicament, many=True)
+        medicaments = models.Medicament.objects.filter(pharmacie__id=int(idPharmacie))
+        Serializer = serializers.MedicamentSerialisers(medicaments, many=True)
         return Response({'status': status.HTTP_200_OK,'success': True,'message': "liste des médicaments d'une pharmacie",'results': Serializer.data,},status=status.HTTP_200_OK,)
 
 class ListCategorieForMedicament(viewsets.ViewSet):
