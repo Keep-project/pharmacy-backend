@@ -93,6 +93,28 @@ class MedicamentSerialisers(serializers.ModelSerializer):
             'updated_at'
         ]  
 
+class MedicamentDetailSerialisers(serializers.ModelSerializer):
+    pharmacies = PharmacieSerializers(many=True, read_only=True)
+    class Meta:
+        model = models.Medicament
+        fields = [
+            'id',
+            'nom',
+            'prix',
+            'marque',
+            'date_exp',
+            'get_image_url',
+            'masse',
+            'qte_stock',
+            'description',
+            'posologie',
+            'categorie',
+            'user',
+            'voix',
+            'pharmacies',
+            'created_at',
+            'updated_at'
+        ]  
            
 
 class ConsultationSerializers(serializers.ModelSerializer):

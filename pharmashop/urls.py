@@ -23,7 +23,9 @@ urlpatterns = [
     #gestion des medicaments
     path("medicament", views.MedicamentViewSet.as_view({'get': 'list',})),
     re_path(r"^medicament/(?P<id>\d+)$", views.MedicamentDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
+    re_path(r"^medicamentDetail/(?P<id>\d+)$", views.DetailMedicamentViewset.as_view({'get': 'retrieve', })),
     re_path(r"^medicament/me/(?P<idPharmacie>\d+)$", views.ListMedicamentForPhamacie.as_view({'get': 'list', })),
+    re_path(r'^filter/$', views.FilterMedicamentViewSet.as_view({'get': 'list',}), ),
     re_path(r"^categorie/me/(?P<idCategorie>\d+)$", views.ListCategorieForMedicament.as_view({'get': 'list', })),
 
     #gestion des Symptomes

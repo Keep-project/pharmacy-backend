@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models import Q
+
 
 
 # Create your models here.
@@ -14,7 +16,7 @@ from django.contrib.auth.models import User
 #  -carnet (portant les informations de la consultation)
 
 
-BASE_URL = 'http://127.0.0.1:8000'
+BASE_URL = 'http://192.168.220.1:8000'
 
 
 class Categorie(models.Model):
@@ -76,12 +78,12 @@ class Medicament(models.Model):
         (2, 'anale')
     )
     nom = models.CharField(max_length=255, null=False)
-    prix = models.DecimalField(null=False, blank=False, decimal_places=5, max_digits=10)
+    prix = models.IntegerField(null=False, blank=False, default=1)
     marque = models.CharField(max_length=255, null=False)
     date_exp = models.DateTimeField(null=False,)
     image = models.FileField(upload_to='images/', blank=False, null= False)
     masse = models.CharField(max_length=10, null=False)
-    qte_stock = models.IntegerField(null=False, blank=False)
+    qte_stock = models.IntegerField(null=False, blank=False, default=1)
     description = models.CharField(max_length=255)
     posologie = models.CharField(max_length=255)
     voix = models.IntegerField(default=0, choices=choices )
@@ -101,7 +103,16 @@ class Medicament(models.Model):
 
         if self.image:
             return BASE_URL + self.image.url
-        return ''
+        return BASE_URL + "/media/images/default-image.jpg"
+
+    def pharmacies(self):
+        medicaments = Medicament.objects.filter(Q(nom__icontains=self.nom))
+        ids = [ medicament.pharmacie_id for medicament in medicaments ] 
+        return Pharmacie.objects.filter(id__in=ids)
+
+
+
+
 class Maladie(models.Model):
     libelle = models.CharField(max_length=255, null=False)
     created_at =models.DateTimeField(auto_now_add=True)
@@ -129,7 +140,7 @@ class Consultaion(models.Model):
         return "{0}".format(self.symptome)
 
 
-
+ 
 class Carnet(models.Model):
     maladie = models.ForeignKey(Maladie, on_delete=models.CASCADE) 
     consultation = models.ForeignKey(Consultaion, on_delete=models.CASCADE)
