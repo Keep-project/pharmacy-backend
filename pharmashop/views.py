@@ -400,11 +400,8 @@ class MaladieDetailViewSet(viewsets.ViewSet):
 class FilterMedicamentViewSet(viewsets.GenericViewSet):
 
     def list(self, request, *args, **kwargs):
-
         query = request.data.get('query')
-
         medicaments = models.Medicament.objects.all()
-
         for dic in query:
             key = list(dic.keys())[0]
             if key == "categorie":
@@ -416,7 +413,7 @@ class FilterMedicamentViewSet(viewsets.GenericViewSet):
                 Q(marque__icontains = dic[key]) |
                 Q(description__icontains = dic[key]) |
                 Q(categorie__libelle__icontains = dic[key]))
-            
+                
             if key == "voix":
                 medicaments = medicaments.filter(voix__in = dic[key])
 
