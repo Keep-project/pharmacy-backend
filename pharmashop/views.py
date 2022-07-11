@@ -184,7 +184,6 @@ class MedicamentViewSet(viewsets.GenericViewSet):
         medicaments = models.Medicament.objects.all()
         page = self.paginate_queryset(medicaments)
         serializer = serializers.MedicamentSerialisers(page, many=True)
-        # return Response({'success': True, 'status':status.HTTP_200_OK, 'message': 'liste des medicaments', 'results': serializer.data}, status=status.HTTP_200_OK)
         return self.get_paginated_response(serializer.data)
 
 
