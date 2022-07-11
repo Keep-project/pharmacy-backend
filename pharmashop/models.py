@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models import Q
+
 
 
 # Create your models here.
@@ -103,6 +105,14 @@ class Medicament(models.Model):
             return BASE_URL + self.image.url
         return BASE_URL + "/media/images/default-image.jpg"
 
+    def pharmacies(self):
+        medicaments = Medicament.objects.filter(Q(nom__icontains=self.nom))
+        ids = [ medicament.pharmacie_id for medicament in medicaments ] 
+        return Pharmacie.objects.filter(id__in=ids)
+
+
+
+
 class Maladie(models.Model):
     libelle = models.CharField(max_length=255, null=False)
     created_at =models.DateTimeField(auto_now_add=True)
@@ -130,7 +140,7 @@ class Consultaion(models.Model):
         return "{0}".format(self.symptome)
 
 
-
+ 
 class Carnet(models.Model):
     maladie = models.ForeignKey(Maladie, on_delete=models.CASCADE) 
     consultation = models.ForeignKey(Consultaion, on_delete=models.CASCADE)
