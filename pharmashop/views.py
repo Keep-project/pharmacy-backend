@@ -397,31 +397,33 @@ class MaladieDetailViewSet(viewsets.ViewSet):
             return Response({'status':status.HTTP_201_CREATED, 'success':True, 'message':"consultation supprimée avec succès"},status=status.HTTP_201_CREATED)
         return Response({'status':status.HTTP_404_NOT_FOUND, 'success': False,"message":"La consultation ayant l'id = {0} n'existe pas !".format(id),}, status=status.HTTP_404_NOT_FOUND,)                           
 
-# class FilterMedicamentViewSet(viewsets.GenericViewSet):
+class FilterMedicamentViewSet(viewsets.GenericViewSet):
 
-#     def list(self, request, *args, **kwargs):
-#         query=[
-#             {'categorie':"tous",
-#             "search":"",
-#             "choix":0}]
+    def list(self, request, *args, **kwargs):
+
+        query = request.data.get('query')
+
+        medicaments = models.Medicament.objects.all()
+
+        for dic in query:
+            key = list(dic.keys())[0]
+            if key == "categorie":
+                medicaments = medicaments.filter(categorie__libelle__icontains = dic[key])
             
-#         results=[] 
-       
-#         if query == 'categorie':  
-#             request.GET.get('categorie') 
-#         choix = request.GET.get('choix')
-#         categorie = request.GET.get('categorie')
-#             medicament = models.Medicament.objects.filter( 
-#                 # Q(nom__icontains = query) |
-#                 # Q(marque__icontains = query) |
-#                 # Q(description__icontains = query) |
-#             # Q(voix__icontains = choix) |
-#             Q(categorie__icontains = query) 
-                
-#         )
-#         page = self.paginate_queryset(medicament)
-#         serializer = serializers.MedicamentSerialisers(page, many=True)
-#         return self.get_paginated_response(serializer.data)
+            if key == "search":
+                medicaments = medicaments.filter( 
+                Q(nom__icontains = dic[key]) |
+                Q(marque__icontains = dic[key]) |
+                Q(description__icontains = dic[key]) |
+                Q(categorie__libelle__icontains = dic[key]))
+            
+            if key == "voix":
+                medicaments = medicaments.filter(voix__in = dic[key])
+
+        page = self.paginate_queryset(medicaments)
+        serializer = serializers.MedicamentSerialisers(page, many=True)
+        return self.get_paginated_response(serializer.data)
+        
 
 class DetailMedicamentViewset(viewsets.ViewSet):
     
@@ -455,8 +457,6 @@ class CarnetViewSet(viewsets.ViewSet):
             serializer.save()
             return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'Carnet crée avec succès', 'results': serializer.data}, status=status.HTTP_200_OK)
         return Response({'status': status.HTTP_400_BAD_REQUEST, 'success': False, 'message':'Erreur de création ! Paramètres incomplèts', 'results': serializer.errors }, status=status.HTTP_400_BAD_REQUEST)
-
-
 
 class  CarnetDetailViewSet(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
