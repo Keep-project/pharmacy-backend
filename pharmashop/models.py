@@ -23,7 +23,8 @@ class Categorie(models.Model):
     libelle = models.CharField(max_length=50)
        
     def __str__(self):
-        return "{0}".format(self.libelle) 
+        return "{0}".format(self.libelle)
+        
 
 class Utilisateur(User):
     adresse = models.CharField(max_length=255, default='ras')
@@ -31,9 +32,9 @@ class Utilisateur(User):
     status = models.CharField(max_length=255, blank=False, default="user")
     experience = models.CharField(max_length=255,blank=False,  default=0)
 
-
     def __str__(self):
         return "{0}".format(self.username) 
+
 
 class Pharmacie(models.Model):
     libelle = models.CharField(max_length=10, default='')
