@@ -54,5 +54,6 @@ urlpatterns = [
 
     # Gestion de la facturation
     re_path(r"^facture/$", views.FactureViewSet.as_view({'get': 'list', 'post':'post'}), name='liste_facture'),
+    re_path(r"^facture/(?P<id>\d+)$", views.FactureDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'}), name='detail_facture'),
 ]
                       

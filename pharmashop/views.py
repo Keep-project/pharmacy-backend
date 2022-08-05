@@ -48,6 +48,42 @@ class FactureViewSet(viewsets.GenericViewSet):
 
 
 
+class FactureDetailViewSet(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
+
+    def get_object(self, id):
+        try:
+           return models.Facture.objects.get(id=id)
+        except models.Facture.DoesNotExist:
+             return False
+
+    def retrieve(self, request,id=None):
+        facture = self.get_object(id)  
+        if facture:
+            serializer = serializers.FactureSerializers(facture)
+            return Response({'status':status.HTTP_200_OK, 'success': True, "message" : 'Facture trouvée', 'results':serializer.data}, status=status.HTTP_200_OK) 
+        return Response({'status': status.HTTP_400_BAD_REQUEST,'success': False, 'message':"La Facture ayant l'id={0} n'existe pas !".format(id), })          
+
+    def put(self, request,id=None):
+        facture = self.get_object(id)
+        if facture:
+            serializer = serializers.FactureSerializers(facture, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'status': status.HTTP_201_CREATED,'success': True,  "message" : 'Mise à jour effectuée avec succès', "results":serializer.data}, status=status.HTTP_200_OK)
+            return Response({ 'success': False, 'status': status.HTTP_400_BAD_REQUEST,  "message" : 'Une erreur est survenue lors de la mise à jour', 'results': serializer.errors})
+        return Response({'success': False, 'status': status.HTTP_404_NOT_FOUND, "message":"La facture ayant l'id = {0} n'existe pas !".format(id),})        
+                            
+    def delete(self, request, id=None):
+        facture = self.get_object(id)
+        if facture:
+            facture.delete()
+            return Response({'status':status.HTTP_204_NO_CONTENT, 'success':True, 'message':"Facture supprimée avec succès"},status=status.HTTP_201_CREATED)
+        return Response({'success' : False, 'status': status.HTTP_404_NOT_FOUND, "message":"La Facture ayant l'id = {0} n'existe pas !".format(id),})    
+
+
+
+
 class PharmacieViewSet(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
     def list(self, request):
@@ -80,7 +116,7 @@ class PharmacieDetailViewSet(viewsets.ViewSet):
     def put(self, request,id=None):
         pharmacie = self.get_object(id)
         if pharmacie:
-            serializer = models.PharmacieSerializers(pharmacie, data=request.data)
+            serializer = serializers.PharmacieSerializers(pharmacie, data=request.data)
             if serializer.is_valid():
                 serializer.save()
                 return Response({'status': status.HTTP_201_CREATED,'success': True,  "message" : 'Mise à jour effectuée avec succès', "results":serializer.data}, status=status.HTTP_200_OK)
