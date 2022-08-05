@@ -29,13 +29,15 @@ class DownloadPDF(viewsets.ViewSet):
 
 
 
-class FactureViewSet(viewsets.ViewSet):
+class FactureViewSet(viewsets.GenericViewSet):
     authentication_classes = [JWTAuthentication]
 
     def list(self, request, *args, **kwargs):
         factures = models.Facture.objects.all()
-        serializer = serializers.FactureSerializers(factures, many=True)
-        return Response({'status': status.HTTP_200_OK,'success': True,'message': 'Liste des factures','results': serializer.data,},status=status.HTTP_200_OK,)
+        page = self.paginate_queryset(factures)
+        serializer = serializers.FactureSerializers(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
 
     def post(self, request, *args, **kwargs):
         serializer = serializers.FactureSerializers(data=request.data)
