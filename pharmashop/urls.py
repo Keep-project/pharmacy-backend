@@ -1,7 +1,7 @@
 
 
 from django.urls import path, re_path
-from pharmashop import views 
+from pharmashop import views
 
 urlpatterns = [
 
@@ -46,6 +46,13 @@ urlpatterns = [
     path("carnet/", views.CarnetViewSet.as_view({'get': 'list','post':'post'})),
     re_path(r"^carnet/(?P<id>\d+)$", views.CarnetDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
 
-    
+
+    # Générer des pdfs
+    re_path(r'^utilisateurs/pdf/$', views.DownloadPDF.as_view({"get": "get"}), name="users_pdf"),
+
+
+
+    # Gestion de la facturation
+    re_path(r"^facture/$", views.FactureViewSet.as_view({'get': 'list', 'post':'post'}), name='liste_facture'),
 ]
                       

@@ -85,12 +85,16 @@ class Medicament(models.Model):
     image = models.FileField(upload_to='images/', blank=False, null= False)
     masse = models.CharField(max_length=10, null=False)
     qte_stock = models.IntegerField(null=False, blank=False, default=1)
-    description = models.CharField(max_length=255)
-    posologie = models.CharField(max_length=255)
+    stockAlert = models.IntegerField(null=False, blank=False, default=1)
+    stockOptimal = models.IntegerField(null=False, blank=False, default=1)
+    description = models.TextField()
+    posologie = models.TextField()
     voix = models.IntegerField(default=0, choices=choices )
     categorie= models.ForeignKey(Categorie, related_name="medicaments", on_delete=models.CASCADE)
     user = models.ForeignKey(Utilisateur, related_name= "medicaments", on_delete=models.CASCADE, null=True, blank=True)
     pharmacie = models.ForeignKey(Pharmacie, related_name="medicaments", on_delete=models.CASCADE, null=True, blank=True)
+    entrepot = models.ForeignKey('Entrepot', related_name="medicaments", on_delete=models.CASCADE, null=True, blank=True)
+
     created_at =models.DateTimeField(auto_now_add=True)
     updated_at =models.DateTimeField(auto_now=True)
 
@@ -112,8 +116,6 @@ class Medicament(models.Model):
         return Pharmacie.objects.filter(id__in=ids)
 
 
-
-
 class Maladie(models.Model):
     libelle = models.CharField(max_length=255, null=False)
     created_at =models.DateTimeField(auto_now_add=True)
@@ -126,7 +128,7 @@ class Maladie(models.Model):
         return "{0}".format(self.libelle)        
         
 
-class Consultaion(models.Model):
+class Consultation(models.Model):
     symptome = models.ForeignKey(Symptome, on_delete=models.CASCADE)
     user = models.ForeignKey(Utilisateur, on_delete=models.CASCADE)
     maladie = models.ManyToManyField(Maladie, through="Carnet", blank=False)
@@ -140,11 +142,10 @@ class Consultaion(models.Model):
     def __str__(self):
         return "{0}".format(self.symptome)
 
-
  
 class Carnet(models.Model):
     maladie = models.ForeignKey(Maladie, on_delete=models.CASCADE) 
-    consultation = models.ForeignKey(Consultaion, on_delete=models.CASCADE)
+    consultation = models.ForeignKey(Consultation, on_delete=models.CASCADE)
     user = models.IntegerField(blank=False, null=False, default=1)
     created_at =models.DateTimeField(auto_now_add=True)
     updated_at =models.DateTimeField(auto_now=True)        
@@ -156,8 +157,70 @@ class Carnet(models.Model):
         return "{0}".format(self.maladie)
 
 
+class Facture(models.Model):
+    utilisateur = models.ForeignKey(Utilisateur, related_name='factures', on_delete=models.CASCADE)
+    medicament = models.ManyToManyField(Medicament, through='MedicamentFacture')
+    montantTotal = models.IntegerField(null=False, blank=False, default=1)
+    quantiteTotal = models.IntegerField(null=False, blank=False, default=1)
+    reduction = models.IntegerField(null=False, blank=False, default=0)
+    note = models.TextField()
+    created_at =models.DateTimeField(auto_now_add=True)
+    updated_at =models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering=('-created_at',)
+
+    def __str__(self):
+        return "{0}".format(self.note)
 
 
-            
+class MedicamentFacture(models.Model):
+    facture = models.ForeignKey(Facture, on_delete=models.CASCADE)
+    medicament = models.ForeignKey(Medicament, on_delete=models.CASCADE)
+    montant = models.IntegerField(null=False, blank=False, default=1)
+    quantite = models.IntegerField(null=False, blank=False, default=1)
+    created_at =models.DateTimeField(auto_now_add=True)
+    updated_at =models.DateTimeField(auto_now=True)
 
+
+
+class Entrepot(models.Model):
+    nom = models.CharField(max_length=255)
+    pays = models.CharField(max_length=255)
+    ville = models.CharField(max_length=255)
+    telephone = models.CharField(max_length=255)
+    description = models.TextField()
+    pharmacie = models.ForeignKey(Pharmacie, related_name="entrepots", on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering=('-created_at',)
+
+    def __str__(self):
+        return "{0}".format(self.nom)
+
+
+class Inventaire(models.Model):
+    libelle = models.TextField()
+    entrepot = models.ForeignKey(Entrepot, related_name="inventaires", on_delete=models.CASCADE)
+    medicament = models.ManyToManyField(Medicament, through='InventaireMedicament')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering=('-created_at',)
+
+    def __str__(self):
+        return "{0}".format(self.libelle)
+
+
+class InventaireMedicament(models.Model):
+    inventaire = models.ForeignKey(Inventaire, on_delete=models.CASCADE)
+    medicament = models.ForeignKey(Medicament, on_delete=models.CASCADE)
+    quantiteAttendue = models.IntegerField(null=False, blank=False, default=1)
+    quantiteReelle = models.IntegerField(null=False, blank=False, default=1)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 

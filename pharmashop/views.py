@@ -8,16 +8,45 @@ import django
 
 from pharmashop import models, serializers
 
+from .helpers import generateReport
+import datetime
+
 
 # Create your views here.
+
+# Cette classe nous permet de produire des document PDF à partir d'un fichier HTML
+class DownloadPDF(viewsets.ViewSet):
+    def get(self, request):
+        users = models.Utilisateur.objects.all()
+        date = datetime.datetime.now()
+        params = {
+            "today": datetime.date.today(),
+            "hour": "{0}h {1}min {2}s".format(date.hour, date.minute, date.second),
+            "users": users,
+        }
+        return generateReport(params)
+
+
+
+
+class FactureViewSet(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
+
+    def list(self, request, *args, **kwargs):
+        factures = models.Facture.objects.all()
+        serializer = serializers.FactureSerializers(factures, many=True)
+        return Response({'status': status.HTTP_200_OK,'success': True,'message': 'Liste des factures','results': serializer.data,},status=status.HTTP_200_OK,)
+
+    def post(self, request, *args, **kwargs):
+        pass
 
 
 class PharmacieViewSet(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
     def list(self, request):
-        pharmacie = models. Pharmacie.objects.all()
-        Serializer = serializers.PharmacieSerializers(pharmacie, many=True)
-        return Response({'status': status.HTTP_200_OK,'success': True,'message': 'Liste des pharmacies','results': Serializer.data,},status=status.HTTP_200_OK,)
+        pharmacies = models. Pharmacie.objects.all()
+        serializer = serializers.PharmacieSerializers(pharmacies, many=True)
+        return Response({'status': status.HTTP_200_OK,'success': True,'message': 'Liste des pharmacies','results': serializer.data,},status=status.HTTP_200_OK,)
 
 
     def post(self, request, *args, **kwargs):
@@ -494,3 +523,7 @@ class CarnetForUser(viewsets.ViewSet):
         carnet = models.Carnet.objects.filter(user=request.user.id)
         serializer = serializers.CarnetSerializers(carnet, many=True)
         return Response({'status': status.HTTP_200_OK,'success': True,'message': "Carnet d'un utilisateur",'results': serializer.data,},status=status.HTTP_200_OK,)
+
+
+
+

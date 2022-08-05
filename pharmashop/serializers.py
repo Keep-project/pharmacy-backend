@@ -106,6 +106,8 @@ class MedicamentDetailSerialisers(serializers.ModelSerializer):
             'get_image_url',
             'masse',
             'qte_stock',
+            'stockAlert',
+            'stockOptimal',
             'description',
             'posologie',
             'categorie',
@@ -119,7 +121,7 @@ class MedicamentDetailSerialisers(serializers.ModelSerializer):
 
 class ConsultationSerializers(serializers.ModelSerializer):
     class Meta:
-        model = models.Consultaion
+        model = models.Consultation
         fields = [
             'id',
             'user',
@@ -149,4 +151,87 @@ class CarnetSerializers(serializers.ModelSerializer):
             'created_at',
             'updated_at'
         ]
-        
+
+
+
+class FactureSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = models.Facture
+        fields = [
+            'id',
+            'utilisateur',
+            'medicament',
+            'montantTotal',
+            'quantiteTotal',
+            'reduction',
+            'note',
+            'created_at',
+            'updated_at'
+        ]
+
+
+
+class MedicamentFactureSerializers(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.MedicamentFacture
+
+        fields = [
+            'id',
+            'facture',
+            'medicament',
+            'montant',
+            'quantite',
+            'created_at',
+            'updated_at'
+        ]
+
+
+
+class EntrepotSerializers(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.Entrepot
+
+        fields = [
+            'nom',
+            'pays',
+            'ville',
+            'telephone',
+            'description',
+            'pharmacie',
+            'created_at',
+            'updated_at'
+        ]
+
+
+class InventaireSerializers(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.Inventaire
+
+        fields = [
+            'id', 
+            'libelle',
+            'entrepot',
+            'medicament',
+            'created_at',
+            'updated_at'
+        ]
+
+
+
+class InventaireMedicamentSerializers(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.InventaireMedicament
+
+        fields = [
+            'id',
+            'inventaire',
+            'medicament',
+            'quantiteAttendue',
+            'quantiteReelle',
+            'created_at',
+            'updated_at'
+        ]
