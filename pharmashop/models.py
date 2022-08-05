@@ -159,7 +159,7 @@ class Carnet(models.Model):
 
 class Facture(models.Model):
     utilisateur = models.ForeignKey(Utilisateur, related_name='factures', on_delete=models.CASCADE)
-    medicament = models.ManyToManyField(Medicament, through='MedicamentFacture')
+    medicaments = models.ManyToManyField(Medicament, through='MedicamentFacture')
     montantTotal = models.IntegerField(null=False, blank=False, default=1)
     quantiteTotal = models.IntegerField(null=False, blank=False, default=1)
     reduction = models.IntegerField(null=False, blank=False, default=0)

@@ -38,7 +38,12 @@ class FactureViewSet(viewsets.ViewSet):
         return Response({'status': status.HTTP_200_OK,'success': True,'message': 'Liste des factures','results': serializer.data,},status=status.HTTP_200_OK,)
 
     def post(self, request, *args, **kwargs):
-        pass
+        serializer = serializers.FactureSerializers(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'Factures créée avec succès', 'results': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'status': status.HTTP_400_BAD_REQUEST, 'results': serializer.errors }, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class PharmacieViewSet(viewsets.ViewSet):
@@ -53,7 +58,7 @@ class PharmacieViewSet(viewsets.ViewSet):
         serializer = serializers.PharmacieSerializers(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'pharmacies créée avec succès', 'results': serializer.data}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'Pharmacies créée avec succès', 'results': serializer.data}, status=status.HTTP_200_OK)
         return Response({'status': status.HTTP_400_BAD_REQUEST, 'results': serializer.errors }, status=status.HTTP_400_BAD_REQUEST)
 
 class PharmacieDetailViewSet(viewsets.ViewSet):

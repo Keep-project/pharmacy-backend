@@ -160,7 +160,7 @@ class FactureSerializers(serializers.ModelSerializer):
         fields = [
             'id',
             'utilisateur',
-            'medicament',
+            'medicaments',
             'montantTotal',
             'quantiteTotal',
             'reduction',
