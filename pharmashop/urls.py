@@ -55,5 +55,15 @@ urlpatterns = [
     # Gestion de la facturation
     re_path(r"^facture/$", views.FactureViewSet.as_view({'get': 'list', 'post':'post'}), name='liste_facture'),
     re_path(r"^facture/(?P<id>\d+)$", views.FactureDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'}), name='detail_facture'),
+
+    # Gestion des entrepôts
+    re_path(r"^entrepot/$", views.EntrepotViewSet.as_view({'get': 'list', 'post':'post'}), name='liste_entrepot'),
+    re_path(r"^entrepot/(?P<id>\d+)$", views.EntrepotDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'}), name='detail_entrepot'),
+
+
+    # Gestion des inventaires
+    re_path(r"^inventaire/$", views.InventaireViewSet.as_view({'get': 'list', 'post':'post'}), name='liste_entrepot'),
+    re_path(r"^inventaire/(?P<id>\d+)$", views.InventaireDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'}), name='detail_entrepot'),
+
 ]
                       

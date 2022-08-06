@@ -83,6 +83,8 @@ class MedicamentSerialisers(serializers.ModelSerializer):
             'get_image_url',
             'masse',
             'qte_stock',
+            'stockAlert',
+            'stockOptimal',
             'description',
             'posologie',
             'categorie',
@@ -152,25 +154,6 @@ class CarnetSerializers(serializers.ModelSerializer):
             'updated_at'
         ]
 
-
-
-class FactureSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = models.Facture
-        fields = [
-            'id',
-            'utilisateur',
-            'medicaments',
-            'montantTotal',
-            'quantiteTotal',
-            'reduction',
-            'note',
-            'created_at',
-            'updated_at'
-        ]
-
-
-
 class MedicamentFactureSerializers(serializers.ModelSerializer):
 
     class Meta:
@@ -182,8 +165,29 @@ class MedicamentFactureSerializers(serializers.ModelSerializer):
             'medicament',
             'montant',
             'quantite',
+            'montantTotal',
             'created_at',
             'updated_at'
+        ]
+
+
+
+
+class FactureSerializers(serializers.ModelSerializer):
+    produits = MedicamentFactureSerializers(many=True, read_only=True)
+    class Meta:
+        model = models.Facture
+        fields = [
+            'id',
+            'utilisateur',
+            #'medicaments',
+            'montantTotal',
+            'quantiteTotal',
+            'reduction',
+            'note',
+            'created_at',
+            'updated_at',
+            'produits'
         ]
 
 
@@ -194,6 +198,7 @@ class EntrepotSerializers(serializers.ModelSerializer):
         model = models.Entrepot
 
         fields = [
+            'id',
             'nom',
             'pays',
             'ville',
@@ -205,20 +210,23 @@ class EntrepotSerializers(serializers.ModelSerializer):
         ]
 
 
-class InventaireSerializers(serializers.ModelSerializer):
-
+class EntrepotDetailsSerializers(serializers.ModelSerializer):
+    medicaments = MedicamentSerialisers(many=True, read_only=True)
     class Meta:
-        model = models.Inventaire
+        model = models.Entrepot
 
         fields = [
-            'id', 
-            'libelle',
-            'entrepot',
-            'medicament',
+            'id',
+            'nom',
+            'pays',
+            'ville',
+            'telephone',
+            'description',
+            'pharmacie',
             'created_at',
-            'updated_at'
+            'updated_at',
+            'medicaments'
         ]
-
 
 
 class InventaireMedicamentSerializers(serializers.ModelSerializer):
@@ -234,4 +242,20 @@ class InventaireMedicamentSerializers(serializers.ModelSerializer):
             'quantiteReelle',
             'created_at',
             'updated_at'
+        ]
+
+
+class InventaireSerializers(serializers.ModelSerializer):
+    produits = InventaireMedicamentSerializers(many=True, read_only=True)
+    class Meta:
+        model = models.Inventaire
+
+        fields = [
+            'id', 
+            'libelle',
+            'entrepot',
+            # 'medicaments',
+            'created_at',
+            'updated_at',
+            'produits'
         ]

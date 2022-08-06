@@ -93,7 +93,7 @@ class Medicament(models.Model):
     categorie= models.ForeignKey(Categorie, related_name="medicaments", on_delete=models.CASCADE)
     user = models.ForeignKey(Utilisateur, related_name= "medicaments", on_delete=models.CASCADE, null=True, blank=True)
     pharmacie = models.ForeignKey(Pharmacie, related_name="medicaments", on_delete=models.CASCADE, null=True, blank=True)
-    entrepot = models.ForeignKey('Entrepot', related_name="medicaments", on_delete=models.CASCADE, null=True, blank=True)
+    entrepot = models.ForeignKey('Entrepot', related_name="medicaments", on_delete=models.CASCADE, null=False, blank=False)
 
     created_at =models.DateTimeField(auto_now_add=True)
     updated_at =models.DateTimeField(auto_now=True)
@@ -164,6 +164,7 @@ class Facture(models.Model):
     quantiteTotal = models.IntegerField(null=False, blank=False, default=1)
     reduction = models.IntegerField(null=False, blank=False, default=0)
     note = models.TextField()
+    # dateEcheance = models.DateTimeField()
     created_at =models.DateTimeField(auto_now_add=True)
     updated_at =models.DateTimeField(auto_now=True)
 
@@ -173,6 +174,9 @@ class Facture(models.Model):
     def __str__(self):
         return "{0}".format(self.note)
 
+    def produits(self):
+        return MedicamentFacture.objects.filter(facture_id = self.id)
+
 
 class MedicamentFacture(models.Model):
     facture = models.ForeignKey(Facture, on_delete=models.CASCADE)
@@ -181,6 +185,9 @@ class MedicamentFacture(models.Model):
     quantite = models.IntegerField(null=False, blank=False, default=1)
     created_at =models.DateTimeField(auto_now_add=True)
     updated_at =models.DateTimeField(auto_now=True)
+
+    def montantTotal(self):
+        return self.montant * self.quantite
 
 
 
@@ -204,7 +211,7 @@ class Entrepot(models.Model):
 class Inventaire(models.Model):
     libelle = models.TextField()
     entrepot = models.ForeignKey(Entrepot, related_name="inventaires", on_delete=models.CASCADE)
-    medicament = models.ManyToManyField(Medicament, through='InventaireMedicament')
+    medicaments = models.ManyToManyField(Medicament, through='InventaireMedicament')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -213,6 +220,10 @@ class Inventaire(models.Model):
 
     def __str__(self):
         return "{0}".format(self.libelle)
+
+
+    def produits(self):
+        return InventaireMedicament.objects.filter(inventaire_id = self.id)
 
 
 class InventaireMedicament(models.Model):

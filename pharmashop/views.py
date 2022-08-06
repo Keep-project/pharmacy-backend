@@ -27,9 +27,137 @@ class DownloadPDF(viewsets.ViewSet):
         return generateReport(params)
 
 
+class InventaireViewSet(viewsets.GenericViewSet):
+
+    '''
+        Cette méthode permet de lister et sauvegarder les inventaires effectués des pharmacies
+    '''
+    authentication_classes = [JWTAuthentication]
+    
+    def list(self, request, *args, **kwargs):
+        inventaire = models.Inventaire.objects.all()
+        page = self.paginate_queryset(inventaire)
+        serializer = serializers.InventaireSerializers(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        medicaments = request.data.get('medicaments')
+        serializer = serializers.InventaireSerializers(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            new_inventaire_id = serializer.data.get('id')
+            for data in medicaments:
+                models.InventaireMedicament(
+                    inventaire = models.Inventaire.objects.get(id = new_inventaire_id),
+                    medicament = models.Medicament.objects.get(id = data.get('id')),
+                    quantiteAttendue = data.get('quantiteAttendue'),
+                    quantiteReelle = data.get('quantiteReelle')
+                ).save()
+
+            return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'Inventaire crée avec succès', 'results': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'status': status.HTTP_400_BAD_REQUEST, 'results': serializer.errors }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class InventaireDetailViewSet(viewsets.ViewSet):
+    '''
+        Cette méthode permet de rechercher, modifier ou supprimer les information contenues dans un entrepôt
+    '''
+    authentication_classes = [JWTAuthentication]
+
+    def get_object(self, id):
+        try:
+           return models.Inventaire.objects.get(id=id)
+        except models.Inventaire.DoesNotExist:
+             return False
+
+    def retrieve(self, request,id=None):
+        inventaire = self.get_object(id)  
+        if inventaire:
+            serializer = serializers.InventaireSerializers(inventaire)
+            return Response({'status':status.HTTP_200_OK, 'success': True, "message" : 'Inventaire trouvé', 'results':serializer.data}, status=status.HTTP_200_OK) 
+        return Response({'status': status.HTTP_400_BAD_REQUEST,'success': False, 'message':"L'inventaire ayant l'id={0} n'existe pas !".format(id), })          
+
+    def put(self, request,id=None):
+        inventaire = self.get_object(id)
+        if inventaire:
+            serializer = serializers.InventaireSerializers(inventaire, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'status': status.HTTP_201_CREATED,'success': True,  "message" : 'Mise à jour effectuée avec succès', "results":serializer.data}, status=status.HTTP_200_OK)
+            return Response({ 'success': False, 'status': status.HTTP_400_BAD_REQUEST,  "message" : 'Une erreur est survenue lors de la mise à jour', 'results': serializer.errors})
+        return Response({'success': False, 'status': status.HTTP_404_NOT_FOUND, "message":"L'inventaire ayant l'id = {0} n'existe pas !".format(id),})        
+                            
+    def delete(self, request, id=None):
+        inventaire = self.get_object(id)
+        if inventaire:
+            inventaire.delete()
+            return Response({'status':status.HTTP_204_NO_CONTENT, 'success':True, 'message':"Inventaire supprimé avec succès"},status=status.HTTP_201_CREATED)
+        return Response({'success' : False, 'status': status.HTTP_404_NOT_FOUND, "message":"L'inventaire ayant l'id = {0} n'existe pas !".format(id),})    
+
+
+class EntrepotViewSet(viewsets.GenericViewSet):
+
+    '''
+        Cette méthode permet de lister et sauvegarder les entrepôts des pharmacies
+    '''
+    authentication_classes = [JWTAuthentication]
+    
+    def list(self, request, *args, **kwargs):
+        entrepot = models.Entrepot.objects.all()
+        page = self.paginate_queryset(entrepot)
+        serializer = serializers.EntrepotSerializers(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        serializer = serializers.EntrepotSerializers(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'Entrepôt crée avec succès', 'results': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'status': status.HTTP_400_BAD_REQUEST, 'results': serializer.errors }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class EntrepotDetailViewSet(viewsets.ViewSet):
+    '''
+        Cette méthode permet de rechercher, modifier ou supprimer les information contenues dans un entrepôt
+    '''
+    authentication_classes = [JWTAuthentication]
+
+    def get_object(self, id):
+        try:
+           return models.Entrepot.objects.get(id=id)
+        except models.Entrepot.DoesNotExist:
+             return False
+
+    def retrieve(self, request,id=None):
+        entrepot = self.get_object(id)  
+        if entrepot:
+            serializer = serializers.EntrepotDetailsSerializers(entrepot)
+            return Response({'status':status.HTTP_200_OK, 'success': True, "message" : 'Entrepôt trouvé', 'results':serializer.data}, status=status.HTTP_200_OK) 
+        return Response({'status': status.HTTP_400_BAD_REQUEST,'success': False, 'message':"L'entrepôt ayant l'id={0} n'existe pas !".format(id), })          
+
+    def put(self, request,id=None):
+        entrepot = self.get_object(id)
+        if entrepot:
+            serializer = serializers.EntrepotSerializers(entrepot, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'status': status.HTTP_201_CREATED,'success': True,  "message" : 'Mise à jour effectuée avec succès', "results":serializer.data}, status=status.HTTP_200_OK)
+            return Response({ 'success': False, 'status': status.HTTP_400_BAD_REQUEST,  "message" : 'Une erreur est survenue lors de la mise à jour', 'results': serializer.errors})
+        return Response({'success': False, 'status': status.HTTP_404_NOT_FOUND, "message":"L'entrepôt ayant l'id = {0} n'existe pas !".format(id),})        
+                            
+    def delete(self, request, id=None):
+        entrepot = self.get_object(id)
+        if entrepot:
+            entrepot.delete()
+            return Response({'status':status.HTTP_204_NO_CONTENT, 'success':True, 'message':"Entrepôt supprimé avec succès"},status=status.HTTP_201_CREATED)
+        return Response({'success' : False, 'status': status.HTTP_404_NOT_FOUND, "message":"L'entrepôt ayant l'id = {0} n'existe pas !".format(id),})    
 
 
 class FactureViewSet(viewsets.GenericViewSet):
+
+    '''
+        Cette méthode permet de lister et sauvegarder les factures des clients
+    '''
     authentication_classes = [JWTAuthentication]
 
     def list(self, request, *args, **kwargs):
@@ -40,15 +168,27 @@ class FactureViewSet(viewsets.GenericViewSet):
 
 
     def post(self, request, *args, **kwargs):
+        medicaments = request.data.get('medicaments')
         serializer = serializers.FactureSerializers(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'Factures créée avec succès', 'results': serializer.data}, status=status.HTTP_200_OK)
+            new_facture_id = serializer.data.get('id')
+            for data in medicaments:
+                models.MedicamentFacture(
+                    facture = models.Facture.objects.get(id = new_facture_id),
+                    medicament = models.Medicament.objects.get(id = data.get('id')),
+                    montant = data.get('prix'),
+                    quantite = data.get('quantite')
+                ).save()
+
+            return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'Factures créée avec succès', 'lignes': len(medicaments), 'results': serializer.data}, status=status.HTTP_200_OK)
         return Response({'status': status.HTTP_400_BAD_REQUEST, 'results': serializer.errors }, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class FactureDetailViewSet(viewsets.ViewSet):
+    '''
+        Cette méthode permet de rechercher, modifier ou supprimer les information contenues dans une facture
+    '''
     authentication_classes = [JWTAuthentication]
 
     def get_object(self, id):
@@ -80,8 +220,6 @@ class FactureDetailViewSet(viewsets.ViewSet):
             facture.delete()
             return Response({'status':status.HTTP_204_NO_CONTENT, 'success':True, 'message':"Facture supprimée avec succès"},status=status.HTTP_201_CREATED)
         return Response({'success' : False, 'status': status.HTTP_404_NOT_FOUND, "message":"La Facture ayant l'id = {0} n'existe pas !".format(id),})    
-
-
 
 
 class PharmacieViewSet(viewsets.ViewSet):
@@ -138,7 +276,6 @@ class ListPhamacieForUser(viewsets.ViewSet):
         Serializer = serializers.PharmacieSerializers(listPhamacie, many=True)
         return Response({'status': status.HTTP_200_OK,'success': True,'message': "Liste des pharmacies d'un utilisateur",'results': Serializer.data,},status=status.HTTP_200_OK,)
 
-   
 class CategorieViewSet(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
 
@@ -186,7 +323,6 @@ class CategorieDetailViewSet(viewsets.ViewSet):
             return Response({'status':status.HTTP_204_NO_CONTENT, 'success':True, 'message':"Categorie supprimée avec succès"}, status=status.HTTP_204_NO_CONTENT)
         return Response({'status': status.HTTP_404_NOT_FOUND, 'success':False,  "message":"La categorie ayant l'id = {0} n'existe pas !".format(id),}, status=status.HTTP_404_NOT_FOUND,)       
           
-
 class UtilisateurViewSet(viewsets.ViewSet):
     permission_classes = [AllowAny]
     def list(self, request):
@@ -215,8 +351,7 @@ class UtilisateurViewSet(viewsets.ViewSet):
             return Response({'status': status.HTTP_201_CREATED, 'success': True, 'message': 'Utilisateur enrégistré avec succès', 'results': serializer.data}, status=status.HTTP_201_CREATED)
 
         return Response({'status': status.HTTP_400_BAD_REQUEST, 'success': False, 'message': 'Erreur de création de l\'utilisateur. Paramètres incomplèts !',} ,status=status.HTTP_400_BAD_REQUEST)
-
-        
+       
 class UtilisateurDetailViewSet(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
     def get_object(self, id):
@@ -266,7 +401,6 @@ class MedicamentViewSet(viewsets.GenericViewSet):
             return Response({'success': True, 'status': status.HTTP_201_CREATED, 'message': 'Medicament crée avec succès', 'results':serializer.data}, status = status.HTTP_201_CREATED)
         return Response({'status': status.HTTP_400_BAD_REQUEST, 'success': False, 'message': "Erreur de création d'un médicament. Paramètres incomplèts !", 'results': serializer.errors} ,status=status.HTTP_400_BAD_REQUEST)
 
-
 class MedicamentDetailViewSet(viewsets.ViewSet):
     def get_object(self, id):
         try:
@@ -297,6 +431,7 @@ class MedicamentDetailViewSet(viewsets.ViewSet):
             medicament.delete()
             return Response({'status':status.HTTP_204_NO_CONTENT, 'success':True, 'message':"Medicament supprimée avec succès"},status=status.HTTP_204_NO_CONTENT)
         return Response({'status':status.HTTP_404_NOT_FOUND, 'success': False,"message":"Le medicament ayant l'id = {0} n'existe pas !".format(id),}, status=status.HTTP_404_NOT_FOUND,)
+
 class ListMedicamentForPhamacie(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
     def list(self, request, idPharmacie=None, *args, **kwargs):
@@ -327,7 +462,6 @@ class SymptomeViewSet(viewsets.ViewSet):
             serializer.save()
             return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'Sypmtome crée avec succès', 'results': serializer.data}, status=status.HTTP_200_OK)
         return Response({ 'success': False, 'status': status.HTTP_400_BAD_REQUEST, 'message': 'Paramètre de création imcomplèts',  'results': serializer.errors, }, status=status.HTTP_400_BAD_REQUEST)
-
 
 class SymptomeDetailViewSet(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
@@ -362,8 +496,6 @@ class SymptomeDetailViewSet(viewsets.ViewSet):
             return Response({'status':status.HTTP_201_CREATED, 'success':True, 'message':"symptome supprimée avec succès"},status=status.HTTP_201_CREATED)
         return Response({'status':status.HTTP_404_NOT_FOUND, 'success': False, "message":"Le symptome ayant l'id = {0} n'existe pas !".format(id),}, status=status.HTTP_404_NOT_FOUND,) 
 
-
-
 class ConsultationViewSet(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
     def list(self, request, *args, **kwargs):
@@ -379,7 +511,6 @@ class ConsultationViewSet(viewsets.ViewSet):
             serializer.save()
             return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'Consultation crée avec succès', 'results': serializer.data}, status=status.HTTP_200_OK)
         return Response({ 'success': False, 'message' : 'Erreur de création ! Paramètres incomplèts','status': status.HTTP_400_BAD_REQUEST, 'results': serializer.errors }, status=status.HTTP_400_BAD_REQUEST) 
-
 
 class ConsultationDetailViewSet(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
@@ -414,7 +545,6 @@ class ConsultationDetailViewSet(viewsets.ViewSet):
             return Response({'status':status.HTTP_201_CREATED, 'success':True, 'message':"consultation supprimée avec succès"},status=status.HTTP_201_CREATED)
         return Response({'status':status.HTTP_404_NOT_FOUND, 'success': False, "message":"La consultation ayant l'id = {0} n'existe pas !".format(id),}, status=status.HTTP_404_NOT_FOUND,)                           
 
-
 class ListconsultationForUser(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
     def list(self, request, *args, **kwargs):
@@ -435,7 +565,6 @@ class MaladieViewSet(viewsets.ViewSet):
             serializer.save()
             return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'Maladie enregistrée avec succès', 'results': serializer.data}, status=status.HTTP_200_OK)
         return Response({ 'success': False, 'status': status.HTTP_400_BAD_REQUEST, 'message' : 'Erreur de création ! Paramètres incomplèts', 'results': serializer.errors }, status=status.HTTP_400_BAD_REQUEST)
-
 
 class MaladieDetailViewSet(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
@@ -493,7 +622,6 @@ class FilterMedicamentViewSet(viewsets.GenericViewSet):
         serializer = serializers.MedicamentSerialisers(page, many=True)
         return self.get_paginated_response(serializer.data)
         
-
 class DetailMedicamentViewset(viewsets.ViewSet):
     
     def get_object(self, id):
@@ -510,8 +638,6 @@ class DetailMedicamentViewset(viewsets.ViewSet):
             data = serializer.data
             return Response({'success': True, 'status': status.HTTP_200_OK, "message": "Détail du medicament", 'results': data })
         return Response({"succes": False, "status": status.HTTP_404_NOT_FOUND, "message": "Le medicament ayant l'id = {0} n'existe pas !".format(id)}, status=status.HTTP_404_NOT_FOUND)    
-
-
 
 class CarnetViewSet(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
