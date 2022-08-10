@@ -78,20 +78,20 @@ class Medicament(models.Model):
         (1, 'injection'),
         (2, 'anale')
     )
-    nom = models.CharField(max_length=255, null=False)
+    nom = models.CharField(max_length=255, null=False, default="")
     prix = models.IntegerField(null=False, blank=False, default=1)
-    marque = models.CharField(max_length=255, null=False)
-    date_exp = models.DateTimeField(null=False,)
+    marque = models.CharField(max_length=255, null=False, default="")
+    date_exp = models.DateTimeField(null=False, default="2042-06-10T17:07:03.121812Z")
     image = models.FileField(upload_to='images/', blank=False, null= False)
-    masse = models.CharField(max_length=10, null=False)
+    masse = models.CharField(max_length=10, null=False, default="")
     qte_stock = models.IntegerField(null=False, blank=False, default=1)
     stockAlert = models.IntegerField(null=False, blank=False, default=1)
     stockOptimal = models.IntegerField(null=False, blank=False, default=1)
-    description = models.TextField()
-    posologie = models.TextField()
+    description = models.TextField(default="")
+    posologie = models.TextField(default="")
     voix = models.IntegerField(default=0, choices=choices )
     categorie= models.ForeignKey(Categorie, related_name="medicaments", on_delete=models.CASCADE)
-    user = models.ForeignKey(Utilisateur, related_name= "medicaments", on_delete=models.CASCADE, null=True, blank=True)
+    user = models.ForeignKey(Utilisateur, related_name= "medicaments", on_delete=models.CASCADE, null=False, blank=False)
     pharmacie = models.ForeignKey(Pharmacie, related_name="medicaments", on_delete=models.CASCADE, null=True, blank=True)
     entrepot = models.ForeignKey('Entrepot', related_name="medicaments", on_delete=models.CASCADE, null=False, blank=False)
 
@@ -192,11 +192,11 @@ class MedicamentFacture(models.Model):
 
 
 class Entrepot(models.Model):
-    nom = models.CharField(max_length=255)
-    pays = models.CharField(max_length=255)
-    ville = models.CharField(max_length=255)
-    telephone = models.CharField(max_length=255)
-    description = models.TextField()
+    nom = models.CharField(max_length=255, default='')
+    pays = models.CharField(max_length=255, default='')
+    ville = models.CharField(max_length=255, default='')
+    telephone = models.CharField(max_length=255, default='')
+    description = models.TextField(default="")
     pharmacie = models.ForeignKey(Pharmacie, related_name="entrepots", on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -209,7 +209,7 @@ class Entrepot(models.Model):
 
 
 class Inventaire(models.Model):
-    libelle = models.TextField()
+    libelle = models.TextField(default="")
     entrepot = models.ForeignKey(Entrepot, related_name="inventaires", on_delete=models.CASCADE)
     medicaments = models.ManyToManyField(Medicament, through='InventaireMedicament')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -231,7 +231,25 @@ class InventaireMedicament(models.Model):
     medicament = models.ForeignKey(Medicament, on_delete=models.CASCADE)
     quantiteAttendue = models.IntegerField(null=False, blank=False, default=1)
     quantiteReelle = models.IntegerField(null=False, blank=False, default=1)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+
+
+class MouvementStock(models.Model):
+    entrepot = models.ForeignKey(Entrepot, on_delete=models.CASCADE)
+    description = models.TextField(default="")
+    quantite = models.IntegerField(null=False, blank=False, default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+    class Meta:
+        ordering =('-created_at',)
+
+    def __str__(self):
+        return self.description
+
+
+class MouvementInventaire(models.Model):
+    pass

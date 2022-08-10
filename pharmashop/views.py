@@ -27,6 +27,65 @@ class DownloadPDF(viewsets.ViewSet):
         return generateReport(params)
 
 
+class MouvementStockViewSet(viewsets.GenericViewSet):
+
+    '''
+        Cette méthode permet de lister et sauvegarder les mouvements de stock effectués des pharmacies
+    '''
+    authentication_classes = [JWTAuthentication]
+    
+    def list(self, request, *args, **kwargs):
+        mouvements = models.MouvementStock.objects.all()
+        page = self.paginate_queryset(mouvements)
+        serializer = serializers.MouvementStockSerializers(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        serializer = serializers.MouvementStockSerializers(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'Mouvement crée avec succès', 'results': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'status': status.HTTP_400_BAD_REQUEST, 'results': serializer.errors }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MouvementStockDetailViewSet(viewsets.ViewSet):
+    '''
+        Cette méthode permet de rechercher, modifier ou supprimer les information contenues dans un mouvement
+    '''
+    authentication_classes = [JWTAuthentication]
+
+    def get_object(self, id):
+        try:
+           return models.MouvementStock.objects.get(id=id)
+        except models.MouvementStock.DoesNotExist:
+             return False
+
+    def retrieve(self, request,id=None):
+        mouvement = self.get_object(id)  
+        if mouvement:
+            serializer = serializers.MouvementStockSerializers(mouvement)
+            return Response({'status':status.HTTP_200_OK, 'success': True, "message" : 'Mouvement trouvé', 'results': serializer.data}, status=status.HTTP_200_OK) 
+        return Response({'status': status.HTTP_400_BAD_REQUEST,'success': False, 'message':"Le mouvement ayant l'id={0} n'existe pas !".format(id), })          
+
+    def put(self, request,id=None):
+        mouvement = self.get_object(id)
+        if mouvement:
+            serializer = serializers.MouvementStockSerializers(mouvement, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'status': status.HTTP_201_CREATED,'success': True,  "message" : 'Mise à jour effectuée avec succès', "results": serializer.data}, status=status.HTTP_200_OK)
+            return Response({ 'success': False, 'status': status.HTTP_400_BAD_REQUEST,  "message" : 'Une erreur est survenue lors de la mise à jour', 'results': serializer.errors})
+        return Response({'success': False, 'status': status.HTTP_404_NOT_FOUND, "message":"Le mouvement ayant l'id = {0} n'existe pas !".format(id),})        
+                            
+    def delete(self, request, id=None):
+        mouvement = self.get_object(id)
+        if mouvement:
+            mouvement.delete()
+            return Response({'status':status.HTTP_204_NO_CONTENT, 'success':True, 'message':"Mouvement supprimé avec succès"},status=status.HTTP_201_CREATED)
+        return Response({'success' : False, 'status': status.HTTP_404_NOT_FOUND, "message":"Le mouvement ayant l'id = {0} n'existe pas !".format(id),})    
+
+
+
 class InventaireViewSet(viewsets.GenericViewSet):
 
     '''
@@ -56,6 +115,7 @@ class InventaireViewSet(viewsets.GenericViewSet):
 
             return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'Inventaire crée avec succès', 'results': serializer.data}, status=status.HTTP_200_OK)
         return Response({'status': status.HTTP_400_BAD_REQUEST, 'results': serializer.errors }, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class InventaireDetailViewSet(viewsets.ViewSet):
@@ -174,11 +234,30 @@ class FactureViewSet(viewsets.GenericViewSet):
             serializer.save()
             new_facture_id = serializer.data.get('id')
             for data in medicaments:
+                quantite = data.get('quantite')
+                old_medicament = models.Medicament.objects.get(id = data.get('id'))
+                new_medicament = {
+                            "id": data.get('id'),
+                            "qte_stock": old_medicament.qte_stock - quantite,
+                            "categorie": old_medicament.categorie_id,
+                            "pharmacie": old_medicament.pharmacie_id,
+                            "entrepot": old_medicament.entrepot_id,
+                }
+                medicament_serialiser = serializers.MedicamentSerialisers(old_medicament, data=new_medicament)
+                if medicament_serialiser.is_valid():
+                    medicament_serialiser.save()
+
                 models.MedicamentFacture(
                     facture = models.Facture.objects.get(id = new_facture_id),
-                    medicament = models.Medicament.objects.get(id = data.get('id')),
+                    medicament = old_medicament,
                     montant = data.get('prix'),
-                    quantite = data.get('quantite')
+                    quantite = quantite
+                ).save()
+
+                models.MouvementStock(
+                    entrepot = models.Entrepot.objects.get(id = old_medicament.entrepot_id), 
+                    description = "Sortie de stock du produit {0} pour le compte de la facture de référence {1} effectuée par: {2}.".format(old_medicament.nom, new_facture_id, request.user.username),
+                    quantite = - quantite
                 ).save()
 
             return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'Factures créée avec succès', 'lignes': len(medicaments), 'results': serializer.data}, status=status.HTTP_200_OK)
@@ -231,6 +310,7 @@ class PharmacieViewSet(viewsets.ViewSet):
 
 
     def post(self, request, *args, **kwargs):
+        request.data['user'] = models.Utilisateur.objects.get(id = request.user.id)
         serializer = serializers.PharmacieSerializers(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -335,14 +415,14 @@ class UtilisateurViewSet(viewsets.ViewSet):
         if ((len(data.get('username')) >= 4) and (len(data.get('password')) >= 8)):
             try:
                 user = models.Utilisateur.objects.create_user(
-                username= data.get('username'),
-                password= data.get('password'),
+                username = data.get('username'),
+                password = data.get('password'),
                 adresse = data.get('adresse') if data.get('adresse') else '',
-                email= data.get('email'),
-                avatar= request.FILES.get('avatar') if request.FILES.get('avatar') else '',
-                is_active=True,
-                is_staff=True,
-                is_superuser=  True if data.get('is_superuser') else False,
+                email = data.get('email'),
+                avatar = request.FILES.get('avatar') if request.FILES.get('avatar') else '',
+                is_active = True,
+                is_staff = True,
+                is_superuser = True if data.get('is_superuser') else False,
             )
             except django.db.utils.IntegrityError as e:
                return Response({'status': status.HTTP_400_BAD_REQUEST, 'success' : False, 'message': "Le nom d'utilisateur '{0}' est déjà pris".format(data.get('username')) }, status=status.HTTP_400_BAD_REQUEST)
@@ -397,11 +477,12 @@ class MedicamentViewSet(viewsets.GenericViewSet):
     def post(self,request, *args, **kwarg):
         serializer = serializers.MedicamentSerialisers(data=request.data)
         if serializer.is_valid():
-            serializer.save(image=request.FILES.get('image'))
+            serializer.save(image=request.FILES.get('image'), user= models.Utilisateur.objects.get(id = request.user.id))
             return Response({'success': True, 'status': status.HTTP_201_CREATED, 'message': 'Medicament crée avec succès', 'results':serializer.data}, status = status.HTTP_201_CREATED)
         return Response({'status': status.HTTP_400_BAD_REQUEST, 'success': False, 'message': "Erreur de création d'un médicament. Paramètres incomplèts !", 'results': serializer.errors} ,status=status.HTTP_400_BAD_REQUEST)
 
 class MedicamentDetailViewSet(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
     def get_object(self, id):
         try:
             return models.Medicament.objects.get(id=id)
@@ -452,7 +533,7 @@ class SymptomeViewSet(viewsets.ViewSet):
 
     def list(self, request, *args, **kwargs):
         symptome = models.Symptome.objects.all()
-        serializer = models.SymptomeSerializers(symptome, many=True)
+        serializer = serializers.SymptomeSerializers(symptome, many=True)
         return Response({'status': status.HTTP_200_OK,'success': True,'message': 'Liste des symptomes', 'results':serializer.data},status=status.HTTP_200_OK,)
 
     def post(self, request, *args, **kwargs):
@@ -505,7 +586,7 @@ class ConsultationViewSet(viewsets.ViewSet):
         return Response({'status': status.HTTP_200_OK,'success': True,'message': 'Liste des consultations', 'results':serializer.data},status=status.HTTP_200_OK,)
 
     def post(self, request, *args, **kwargs):
-        
+        request.data['user'] = models.Utilisateur.objects.get(id = request.user.id)
         serializer = serializers.ConsultationSerializers(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -692,7 +773,4 @@ class CarnetForUser(viewsets.ViewSet):
         carnet = models.Carnet.objects.filter(user=request.user.id)
         serializer = serializers.CarnetSerializers(carnet, many=True)
         return Response({'status': status.HTTP_200_OK,'success': True,'message': "Carnet d'un utilisateur",'results': serializer.data,},status=status.HTTP_200_OK,)
-
-
-
 

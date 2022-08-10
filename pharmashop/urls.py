@@ -21,7 +21,7 @@ urlpatterns = [
     re_path(r"^utilisateur/(?P<id>\d+)$", views.UtilisateurDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
 
     #gestion des medicaments
-    path("medicament", views.MedicamentViewSet.as_view({'get': 'list',})),
+    re_path(r"^medicament/$", views.MedicamentViewSet.as_view({'get': 'list',})),
     re_path(r"^medicament/(?P<id>\d+)$", views.MedicamentDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
     re_path(r"^medicamentDetail/(?P<id>\d+)$", views.DetailMedicamentViewset.as_view({'get': 'retrieve', })),
     re_path(r"^medicament/me/(?P<idPharmacie>\d+)$", views.ListMedicamentForPhamacie.as_view({'get': 'list', })),
@@ -64,6 +64,11 @@ urlpatterns = [
     # Gestion des inventaires
     re_path(r"^inventaire/$", views.InventaireViewSet.as_view({'get': 'list', 'post':'post'}), name='liste_entrepot'),
     re_path(r"^inventaire/(?P<id>\d+)$", views.InventaireDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'}), name='detail_entrepot'),
+
+
+    # Gestion des mouvements de stock
+    re_path(r"^mouvement/$", views.MouvementStockViewSet.as_view({'get': 'list', 'post':'post'}), name='liste_entrepot'),
+    re_path(r"^mouvement/(?P<id>\d+)$", views.MouvementStockDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'}), name='detail_entrepot'),
 
 ]
                       

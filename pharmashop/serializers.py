@@ -91,6 +91,7 @@ class MedicamentSerialisers(serializers.ModelSerializer):
             'user',
             'voix',
             'pharmacie',
+            'entrepot',
             'created_at',
             'updated_at'
         ]  
@@ -258,4 +259,18 @@ class InventaireSerializers(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'produits'
+        ]
+
+
+class MouvementStockSerializers(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.MouvementStock
+        fields = [
+            'id',
+            'entrepot',
+            'description',
+            'quantite',
+            'created_at',
+            'updated_at'
         ]
