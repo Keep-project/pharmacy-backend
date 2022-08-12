@@ -7,22 +7,22 @@ urlpatterns = [
 
     #gestion des Pharmacies
     re_path(r"^pharmacie/$", views.PharmacieViewSet.as_view({'get': 'list', 'post': 'post'})),
-    re_path(r"^pharmacie/(?P<id>\d+)$", views.PharmacieDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
+    re_path(r"^pharmacie/(?P<id>\d+)$", views.PharmacieDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete': 'delete'})),
     re_path(r"^pharmacie/me$", views.ListPhamacieForUser.as_view({'get': 'list', })),
 
     #gestion des categories
     path("categorie/", views.CategorieViewSet.as_view({'get': 'list','post':'post'})),
-    re_path(r"^categorie/(?P<id>\d+)$", views.CategorieDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
+    re_path(r"^categorie/(?P<id>\d+)$", views.CategorieDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete': 'delete'})),
     
 
     #gestion des categories
     re_path(r"^utilisateur/$", views.UtilisateurViewSet.as_view({'get': 'list', 'post':'post'})),
     # path("jwt/create", views.UtilisateurViewSet.as_view({'get': 'list', 'post':'post'})),
-    re_path(r"^utilisateur/(?P<id>\d+)$", views.UtilisateurDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
+    re_path(r"^utilisateur/(?P<id>\d+)$", views.UtilisateurDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete': 'delete'})),
 
     #gestion des medicaments
     re_path(r"^medicament/$", views.MedicamentViewSet.as_view({'get': 'list',})),
-    re_path(r"^medicament/(?P<id>\d+)$", views.MedicamentDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete':'delete'})),
+    re_path(r"^medicament/(?P<id>\d+)$", views.MedicamentDetailViewSet.as_view({'get': 'retrieve', 'put':'put', 'delete': 'delete'})),
     re_path(r"^medicamentDetail/(?P<id>\d+)$", views.DetailMedicamentViewset.as_view({'get': 'retrieve', })),
     re_path(r"^medicament/me/(?P<idPharmacie>\d+)$", views.ListMedicamentForPhamacie.as_view({'get': 'list', })),
     re_path(r'^filter/$', views.FilterMedicamentViewSet.as_view({'get': 'list',}), ),
@@ -49,8 +49,6 @@ urlpatterns = [
 
     # Générer des pdfs
     re_path(r'^utilisateurs/pdf/$', views.DownloadPDF.as_view({"get": "get"}), name="users_pdf"),
-
-
 
     # Gestion de la facturation
     re_path(r"^facture/$", views.FactureViewSet.as_view({'get': 'list', 'post':'post'}), name='liste_facture'),
