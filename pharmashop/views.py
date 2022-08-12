@@ -301,12 +301,13 @@ class FactureDetailViewSet(viewsets.ViewSet):
         return Response({'success' : False, 'status': status.HTTP_404_NOT_FOUND, "message":"La Facture ayant l'id = {0} n'existe pas !".format(id),})    
 
 
-class PharmacieViewSet(viewsets.ViewSet):
+class PharmacieViewSet(viewsets.GenericViewSet):
     authentication_classes = [JWTAuthentication]
     def list(self, request):
         pharmacies = models. Pharmacie.objects.all()
-        serializer = serializers.PharmacieSerializers(pharmacies, many=True)
-        return Response({'status': status.HTTP_200_OK,'success': True,'message': 'Liste des pharmacies','results': serializer.data,},status=status.HTTP_200_OK,)
+        page = self.paginate_queryset(pharmacies)
+        serializer = serializers.PharmacieSerializers(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
 
     def post(self, request, *args, **kwargs):
