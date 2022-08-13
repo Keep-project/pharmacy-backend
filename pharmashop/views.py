@@ -624,9 +624,6 @@ class MedicamentDetailViewSet(viewsets.ViewSet):
         if medicament:
             serializer = serializers.MedicamentSerialisers(medicament, data=request.data)
             if serializer.is_valid():
-                print(medicament.prix)
-                print(request.data.get('prix'))
-
                 if medicament.prix != request.data.get('prix'):
                     serializer.save()
                     models.HistoriquePrix(
