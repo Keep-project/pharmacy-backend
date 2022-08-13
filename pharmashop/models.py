@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.db.models import Q
+from django.db.models import Q, Sum
 
 
 
@@ -45,10 +45,10 @@ class Pharmacie(models.Model):
     longitude = models.FloatField(null=False, default=0)
     h_ouverture = models.DateTimeField(null=True,)
     h_fermeture = models.DateTimeField(null=True)
-    user = models.ForeignKey(Utilisateur, related_name="pharmacies",on_delete=models.CASCADE, null=False, blank=False)
+    user = models.ForeignKey(Utilisateur, related_name="pharmacies", on_delete=models.CASCADE, null=False, blank=False)
 
-    created_at =models.DateTimeField(auto_now_add=True,)
-    updated_at =models.DateTimeField(auto_now=True,)
+    created_at = models.DateTimeField(auto_now_add=True,)
+    updated_at = models.DateTimeField(auto_now=True,)
     
     def __str__(self):
         return "{0}".format(self.nom)  
@@ -56,7 +56,9 @@ class Pharmacie(models.Model):
     class Meta:
         ordering=('-created_at',)
 
-       
+    def stocks(self, nom):
+        return Medicament.objects.filter(Q(nom=nom) & Q(pharmacie__id=self.id))
+
 
 class Symptome(models.Model):
     libelle= models.CharField(max_length=50)
@@ -68,7 +70,6 @@ class Symptome(models.Model):
 
     def __str__(self):
         return "{0}".format(self.libelle)    
-
 
 
 class Medicament(models.Model):
@@ -91,7 +92,7 @@ class Medicament(models.Model):
     posologie = models.TextField(default="")
     voix = models.IntegerField(default=0, choices=choices )
     categorie= models.ForeignKey(Categorie, related_name="medicaments", on_delete=models.CASCADE)
-    user = models.ForeignKey(Utilisateur, related_name= "medicaments", on_delete=models.CASCADE, null=False, blank=False)
+    user = models.ForeignKey(Utilisateur, related_name="medicaments", on_delete=models.CASCADE, null=False, blank=False)
     pharmacie = models.ForeignKey(Pharmacie, related_name="medicaments", on_delete=models.CASCADE, null=True, blank=True)
     entrepot = models.ForeignKey('Entrepot', related_name="medicaments", on_delete=models.CASCADE, null=False, blank=False)
 
@@ -111,9 +112,29 @@ class Medicament(models.Model):
         return BASE_URL + "/media/images/default-image.jpg"
 
     def pharmacies(self):
-        medicaments = Medicament.objects.filter(Q(nom__icontains=self.nom))
-        ids = [ medicament.pharmacie_id for medicament in medicaments ] 
-        return Pharmacie.objects.filter(id__in=ids)
+        medicaments = Medicament.objects.filter(Q(nom=self.nom))
+        ids = [medicament.pharmacie_id for medicament in medicaments]
+        pharmas = Pharmacie.objects.filter(id__in=ids)
+        liste = [{
+                    "id": p.id,
+                    "nom": p.nom,
+                    "localisation": p.localisation,
+                    "tel": p.tel,
+                    "stock": Medicament.objects.filter(
+                        Q(nom=self.nom) & \
+                        Q(pharmacie=p.id)
+                    ).aggregate(stock=Sum('qte_stock'))['stock'],
+                    "latitude": p.latitude,
+                    "longitude": p.longitude,
+                    "h_ouverture": str(p.h_ouverture),
+                    "h_fermeture": str(p.h_fermeture),
+                    "user": p.user_id,
+                    "created_at": str(p.created_at),
+                    "updated_at": str(p.updated_at)
+                }
+                for p in pharmas
+            ]
+        return liste
 
 
 class Maladie(models.Model):
@@ -137,7 +158,6 @@ class Consultation(models.Model):
 
     class Meta:
         ordering=('-created_at',)
-
 
     def __str__(self):
         return "{0}".format(self.symptome)

@@ -53,7 +53,6 @@ class UtilisateurSerializer(serializers.ModelSerializer):
         ]   
 
 
-
 class PharmacieSerializers(serializers.ModelSerializer):
     class Meta:
         model = models.Pharmacie
@@ -70,6 +69,7 @@ class PharmacieSerializers(serializers.ModelSerializer):
             'created_at',
             'updated_at'
         ]        
+
 
 class MedicamentSerialisers(serializers.ModelSerializer):
     class Meta:
@@ -96,8 +96,9 @@ class MedicamentSerialisers(serializers.ModelSerializer):
             'updated_at'
         ]  
 
+
 class MedicamentDetailSerialisers(serializers.ModelSerializer):
-    pharmacies = PharmacieSerializers(many=True, read_only=True)
+
     class Meta:
         model = models.Medicament
         fields = [
@@ -116,7 +117,6 @@ class MedicamentDetailSerialisers(serializers.ModelSerializer):
             'categorie',
             'user',
             'voix',
-            'pharmacies',
             'created_at',
             'updated_at'
         ]  
