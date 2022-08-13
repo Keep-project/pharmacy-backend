@@ -81,6 +81,7 @@ class Medicament(models.Model):
     )
     nom = models.CharField(max_length=255, null=False, default="")
     prix = models.IntegerField(null=False, blank=False, default=1)
+    # prixAchat = models.IntegerField(null=False, blank=False, default=1)
     marque = models.CharField(max_length=255, null=False, default="")
     date_exp = models.DateTimeField(null=False, default="2042-06-10T17:07:03.121812Z")
     image = models.FileField(upload_to='images/', blank=False, null= False)
@@ -91,16 +92,17 @@ class Medicament(models.Model):
     description = models.TextField(default="")
     posologie = models.TextField(default="")
     voix = models.IntegerField(default=0, choices=choices )
-    categorie= models.ForeignKey(Categorie, related_name="medicaments", on_delete=models.CASCADE)
+    categorie = models.ForeignKey(Categorie, related_name="medicaments", on_delete=models.CASCADE)
     user = models.ForeignKey(Utilisateur, related_name="medicaments", on_delete=models.CASCADE, null=False, blank=False)
     pharmacie = models.ForeignKey(Pharmacie, related_name="medicaments", on_delete=models.CASCADE, null=True, blank=True)
     entrepot = models.ForeignKey('Entrepot', related_name="medicaments", on_delete=models.CASCADE, null=False, blank=False)
 
-    created_at =models.DateTimeField(auto_now_add=True)
-    updated_at =models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering=('-created_at',)
+        ordering = ('-created_at',)
+        unique_together = ('nom', 'pharmacie',)
 
     def __str__(self):
         return "{0}".format(self.nom)
@@ -136,14 +138,28 @@ class Medicament(models.Model):
             ]
         return liste
 
+    def entrepots(self):
+        return Entrepot.objects.filter(Q(id=self.entrepot_id))
+
+    def proprietaire(self):
+        return Utilisateur.objects.get(id=self.user_id)
+
+    def references(self):
+        lignes = MedicamentFacture.objects.filter(medicament_id=self.id)
+        ids = [ligne.facture_id for ligne in lignes]
+        return Facture.objects.filter(id__in=ids)
+
+    def historiques(self):
+        return HistoriquePrix.objects.filter(medicament_id=self.id)
+
 
 class Maladie(models.Model):
     libelle = models.CharField(max_length=255, null=False)
-    created_at =models.DateTimeField(auto_now_add=True)
-    updated_at =models.DateTimeField(auto_now=True)        
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering=('-created_at',)
+        ordering = ('-created_at',)
 
     def __str__(self):
         return "{0}".format(self.libelle)        
@@ -153,11 +169,11 @@ class Consultation(models.Model):
     symptome = models.ForeignKey(Symptome, on_delete=models.CASCADE)
     user = models.ForeignKey(Utilisateur, on_delete=models.CASCADE)
     maladie = models.ManyToManyField(Maladie, through="Carnet", blank=False)
-    created_at =models.DateTimeField(auto_now_add=True)
-    updated_at =models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering=('-created_at',)
+        ordering = ('-created_at',)
 
     def __str__(self):
         return "{0}".format(self.symptome)
@@ -167,11 +183,11 @@ class Carnet(models.Model):
     maladie = models.ForeignKey(Maladie, on_delete=models.CASCADE) 
     consultation = models.ForeignKey(Consultation, on_delete=models.CASCADE)
     user = models.IntegerField(blank=False, null=False, default=1)
-    created_at =models.DateTimeField(auto_now_add=True)
-    updated_at =models.DateTimeField(auto_now=True)        
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering=('-created_at',)
+        ordering = ('-created_at',)
 
     def __str__(self):
         return "{0}".format(self.maladie)
@@ -189,7 +205,7 @@ class Facture(models.Model):
     updated_at =models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering=('-created_at',)
+        ordering = ('-created_at',)
 
     def __str__(self):
         return "{0}".format(self.note)
@@ -209,6 +225,8 @@ class MedicamentFacture(models.Model):
     def montantTotal(self):
         return self.montant * self.quantite
 
+    class Meta:
+        ordering = ('-created_at',)
 
 
 class Entrepot(models.Model):
@@ -218,14 +236,28 @@ class Entrepot(models.Model):
     telephone = models.CharField(max_length=255, default='')
     description = models.TextField(default="")
     pharmacie = models.ForeignKey(Pharmacie, related_name="entrepots", on_delete=models.CASCADE)
+    # medicaments = models.ManyToManyField(Medicament, through='EntrepotMedicament')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering=('-created_at',)
+        ordering = ('-created_at',)
 
     def __str__(self):
         return "{0}".format(self.nom)
+
+"""
+
+class EntrepotMedicament(models.Model):
+    '''
+        Cette classe liste les entrepôts d'un médicament donné
+    '''
+    entrepot = models.ForeignKey(Entrepot, on_delete=models.CASCADE)
+    medicament = models.ForeignKey(Medicament, on_delete=models.CASCADE)
+    quantite = models.IntegerField(null=False, blank=False, default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+"""
 
 
 class Inventaire(models.Model):
@@ -241,7 +273,6 @@ class Inventaire(models.Model):
     def __str__(self):
         return "{0}".format(self.libelle)
 
-
     def produits(self):
         return InventaireMedicament.objects.filter(inventaire_id = self.id)
 
@@ -255,7 +286,6 @@ class InventaireMedicament(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
-
 class MouvementStock(models.Model):
     entrepot = models.ForeignKey(Entrepot, on_delete=models.CASCADE)
     description = models.TextField(default="")
@@ -263,9 +293,8 @@ class MouvementStock(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-
     class Meta:
-        ordering =('-created_at',)
+        ordering = ('-created_at',)
 
     def __str__(self):
         return self.description
@@ -273,3 +302,16 @@ class MouvementStock(models.Model):
 
 class MouvementInventaire(models.Model):
     pass
+
+
+class HistoriquePrix(models.Model):
+    basePrix = models.CharField(max_length=255, default="HT")
+    tva = models.FloatField(default=19.25)
+    prixVente = models.IntegerField(null=False, blank=False, default=0) # Le prix de vente ici est en HT
+    medicament = models.ForeignKey(Medicament, related_name="historiques", on_delete=models.CASCADE)
+    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ('-created_at', )
