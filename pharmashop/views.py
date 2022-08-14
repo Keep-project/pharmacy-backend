@@ -2,7 +2,8 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from django.db.models import Q, Sum
+from django.db.models import Q
+from django.db import IntegrityError, transaction
 import django
 
 from pharmashop import models, serializers
@@ -273,40 +274,60 @@ class FactureViewSet(viewsets.GenericViewSet):
 
     def post(self, request, *args, **kwargs):
         medicaments = request.data.get('medicaments')
+        if not request.data['note']:
+            request.data['note'] = "Facture pour paiement complèt de {0} médicament(s) à raison de: {0} F" \
+                .format(request.data.get('montantTotal'), request.data.get('montantTotal'))
+
         serializer = serializers.FactureSerializers(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            new_facture_id = serializer.data.get('id')
-            for data in medicaments:
-                quantite = data.get('quantite')
-                old_medicament = models.Medicament.objects.get(id=data.get('id'))
-                new_medicament = {
-                    "id": data.get('id'),
-                    "qte_stock": old_medicament.qte_stock - quantite,
-                    "categorie": old_medicament.categorie_id,
-                    "pharmacie": old_medicament.pharmacie_id,
-                    "entrepot": old_medicament.entrepot_id,
-                }
-                medicament_serialiser = serializers.MedicamentSerialisers(old_medicament, data=new_medicament)
-                if medicament_serialiser.is_valid():
-                    medicament_serialiser.save()
+            ''' Création de la facture '''
 
-                models.MedicamentFacture(
-                    facture=models.Facture.objects.get(id=new_facture_id),
-                    medicament=old_medicament,
-                    montant=data.get('prix'),
-                    quantite=quantite
-                ).save()
+            try:
+                with transaction.atomic():
+                    serializer.save()
+                    new_facture_id = serializer.data.get('id')
+                    for data in medicaments:
+                        '''
+                            Mise à jour des quantités en stock des médicaments inclus dans la facture
+                        '''
+                        quantite = data.get('quantite')
+                        old_medicament = models.Medicament.objects.get(id=data.get('id'))
+                        new_medicament = {
+                            "id": data.get('id'),
+                            "qte_stock": old_medicament.qte_stock - quantite,
+                            "categorie": old_medicament.categorie_id,
+                            "pharmacie": old_medicament.pharmacie_id,
+                            "entrepot": old_medicament.entrepot_id,
+                        }
+                        medicament_serialiser = serializers.MedicamentSerialisers(old_medicament, data=new_medicament)
+                        if medicament_serialiser.is_valid():
+                            ''' Sauvegarde de la mise à jour du stock '''
+                            medicament_serialiser.save()
 
-                models.MouvementStock(
-                    entrepot=models.Entrepot.objects.get(id=old_medicament.entrepot_id),
-                    description="Sortie de stock du produit {0} pour le compte de la facture de référence {1}  \
-                     effectuée par: {2}.".format(old_medicament.nom, new_facture_id, request.user.username),
-                    quantite=- quantite
-                ).save()
+                        ''' Enregistrement d'une ligne de produit de la facture '''
+                        models.MedicamentFacture(
+                            facture=models.Facture.objects.get(id=new_facture_id),
+                            medicament=old_medicament,
+                            montant=data.get('prix'),
+                            quantite=quantite
+                        ).save()
+                        ''' Enregistrement d'une sortie de stock du produit '''
+                        models.MouvementStock(
+                            entrepot=models.Entrepot.objects.get(id=old_medicament.entrepot_id),
+                            description="Sortie de stock du produit {0} pour le compte de la facture de référence {1} \
+                             effectuée par: {2}.".format(old_medicament.nom, new_facture_id, request.user.username),
+                            quantite=- quantite
+                        ).save()
 
-            return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'Factures créée avec succès', \
-                             'lignes': len(medicaments), 'results': serializer.data}, status=status.HTTP_200_OK)
+                    return Response({'success': True, 'status': status.HTTP_200_OK,  \
+                                     'message': 'Factures créée avec succès', \
+                                 'lignes': len(medicaments), 'results': serializer.data}, status=status.HTTP_200_OK)
+
+            except IntegrityError as e:
+                return Response({'success': False, 'status': status.HTTP_500_INTERNAL_SERVER_ERROR, \
+                                 'message': 'Une erreur est apparue. Merci de recommencer votre requête.', \
+                                'results': e}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         return Response({'status': status.HTTP_400_BAD_REQUEST, 'results': serializer.errors}, \
                         status=status.HTTP_400_BAD_REQUEST)
 
