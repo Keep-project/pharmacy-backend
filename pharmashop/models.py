@@ -21,6 +21,16 @@ BASE_URL = 'http://192.168.220.1:8000'
 
 class Categorie(models.Model):
     libelle = models.CharField(max_length=50)
+
+    class Meta:
+        '''
+            Création de ses propres permissions sur le modèle. 
+            Après avoir définit les permissions, il faut toujours faire les migrations
+            vers la base de données.
+        '''
+        permissions = (
+            ('publier', 'Peut publier catégorie'),
+        )
        
     def __str__(self):
         return "{0}".format(self.libelle)
