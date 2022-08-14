@@ -5,6 +5,9 @@ from pharmashop import views
 
 urlpatterns = [
 
+    # Controle de permission des utilisateurs
+    re_path(r"^permission/(?P<codename>\w+)$", views.HasPermissionViewSet.as_view({'get': 'list'})),
+
     # gestion des Pharmacies
     re_path(r"^pharmacie/$", views.PharmacieViewSet.as_view({'get': 'list', 'post': 'post'})),
     re_path(r"^pharmacie/(?P<id>\d+)$",  \

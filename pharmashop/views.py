@@ -26,6 +26,22 @@ class DownloadPDF(viewsets.ViewSet):
         return generateReport(params)
 
 
+class HasPermissionViewSet(viewsets.GenericViewSet):
+    '''
+        Cette méthode permet de vérifier que l'utilisateur a la permission requise
+    '''
+    authentication_classes = [JWTAuthentication]
+
+    def list(self, request, codename="", *args, **kwargs):
+        has_perm = hasPermission(request, codename='pharmashop.{0}'.format(codename))
+        if has_perm:
+            return Response({'status': status.HTTP_200_OK, 'success': True, 'message':  \
+                'Permission accordée'}, status=status.HTTP_200_OK)
+
+        return Response({'status': status.HTTP_403_FORBIDDEN, 'success': False, 'message': \
+            "Permission non accodée"}, status=status.HTTP_403_FORBIDDEN)
+
+
 class MouvementStockViewSet(viewsets.GenericViewSet):
     '''
         Cette méthode permet de lister et sauvegarder les mouvements de stock effectués des pharmacies
@@ -42,7 +58,7 @@ class MouvementStockViewSet(viewsets.GenericViewSet):
         serializer = serializers.MouvementStockSerializers(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'Mouvement crée avec succès', \
+            return Response({'success': True, 'status': status.HTTP_200_OK,  'message': 'Mouvement crée avec succès', \
                              'results': serializer.data}, status=status.HTTP_200_OK)
         return Response({'status': status.HTTP_400_BAD_REQUEST, 'results': serializer.errors}, \
                         status=status.HTTP_400_BAD_REQUEST)
