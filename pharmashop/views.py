@@ -7,7 +7,7 @@ import django
 
 from pharmashop import models, serializers
 
-from .helpers import generateReport
+from .helpers import generateReport, hasPermission, addPermission, removePermission, clearPermissions
 import datetime
 
 
@@ -481,8 +481,7 @@ class UtilisateurViewSet(viewsets.ViewSet):
     permission_classes = [AllowAny]
 
     def list(self, request):
-        utilisateur = models.Utilisateur.objects.all()
-        serializer = serializers.UtilisateurSerializer(utilisateur, many=True)
+        serializer = serializers.UtilisateurSerializer(models.Utilisateur.objects.all(), many=True)
         return Response({'success': True, 'status': status.HTTP_200_OK, 'message': \
             'liste des utilisateurs', 'results': serializer.data}, status=status.HTTP_200_OK)
 
@@ -498,7 +497,7 @@ class UtilisateurViewSet(viewsets.ViewSet):
                     email=data.get('email'),
                     avatar=request.FILES.get('avatar') if request.FILES.get('avatar') else '',
                     is_active=True,
-                    is_staff=True,
+                    is_staff=True if data.get('is_staff') else False,
                     is_superuser=True if data.get('is_superuser') else False,
                 )
             except django.db.utils.IntegrityError as e:

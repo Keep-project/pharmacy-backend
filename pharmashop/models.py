@@ -3,8 +3,8 @@ from django.contrib.auth.models import User
 from django.db.models import Q, Sum
 
 
-
 # Create your models here.
+
 # liste des models
 #  -pharmacie
 #  -medicament
