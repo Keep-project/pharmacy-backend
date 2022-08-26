@@ -14,6 +14,9 @@ urlpatterns = [
             views.PharmacieDetailViewSet.as_view({'get': 'retrieve', 'put': 'put', 'delete': 'delete'})),
     re_path(r"^pharmacie/me$", views.ListPhamacieForUser.as_view({'get': 'list', })),
 
+    # Liste des pharmacies proches
+    re_path(r'^pharmacie/proche/(?P<d>\d+)$', views.PharmacieProcheViewSet.as_view({'get': 'list'})),
+
     # gestion des categories
     path("categorie/", views.CategorieViewSet.as_view({'get': 'list', 'post': 'post'})),
     re_path(r"^categorie/(?P<id>\d+)$",  \
@@ -32,7 +35,7 @@ urlpatterns = [
             views.MedicamentDetailViewSet.as_view({'get': 'retrieve', 'put': 'put', 'delete': 'delete'})),
     re_path(r"^medicamentDetail/(?P<id>\d+)$", views.DetailMedicamentViewset.as_view({'get': 'retrieve', })),
     re_path(r"^medicament/me/(?P<id>\d+)$", views.ListMedicamentForPhamacie.as_view({'get': 'list', })),
-    re_path(r'^filter/$', views.FilterMedicamentViewSet.as_view({'get': 'list', }), ),
+    re_path(r'^medicament/filter/$', views.FilterMedicamentViewSet.as_view({'post': 'list', }), ),
     re_path(r"^categories/me/(?P<id>\d+)$", views.ListCategorieForMedicament.as_view({'get': 'list', })),
 
     # gestion des Symptomes

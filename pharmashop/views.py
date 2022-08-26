@@ -1,14 +1,15 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.db.models import Q
 from django.db import IntegrityError, transaction
 import django
+import math
 
 from pharmashop import models, serializers
 
-from .helpers import generateReport, hasPermission, addPermission, removePermission, clearPermissions
+from .helpers import distance, generateReport, hasPermission, addPermission, removePermission, clearPermissions
 import datetime
 
 
@@ -378,6 +379,24 @@ class FactureDetailViewSet(viewsets.ViewSet):
                          "message": "La Facture ayant l'id = {0} n'existe pas !".format(id), })
 
 
+class PharmacieProcheViewSet(viewsets.GenericViewSet):
+
+    def list(self, request, d=0, *args, **kwargs):
+        lat1 = 4.05  # Douala latitude
+        lat2 = 3.866667  # Yaoundé latitude
+        lon1 = 9.7  # Douala longitude
+        lon2 = 11.516667  # Yaoundé longitude
+        pharmacies = models.Pharmacie.objects.all()
+        mylist = []
+        for p in pharmacies:
+            if int(distance(lat2, p.latitude, lon2, p.longitude)) <= int(d):
+                serializer = serializers.PharmacieSerializers(p)
+                mylist.append(serializer.data)
+        return Response({'status': status.HTTP_200_OK, 'success': True, 'message': \
+            'liste des pharmacies dans un rayon {0} KM'.format(d), 'count': len(mylist), \
+                         'result': mylist}, status=status.HTTP_200_OK)
+
+
 class PharmacieViewSet(viewsets.GenericViewSet):
     authentication_classes = [JWTAuthentication]
 
@@ -408,9 +427,11 @@ class PharmacieDetailViewSet(viewsets.ViewSet):
             return False
 
     def retrieve(self, request, id=None):
+
         pharmacie = self.get_object(id)
         if pharmacie:
             serializer = serializers.PharmacieSerializers(pharmacie)
+
             return Response({'status': status.HTTP_200_OK, 'success': True, "message": 'Pharmacie trouvée', \
                              'results': serializer.data}, status=status.HTTP_200_OK)
         return Response({'status': status.HTTP_400_BAD_REQUEST, 'success': False, \
@@ -524,7 +545,6 @@ class UtilisateurViewSet(viewsets.ViewSet):
 
     def post(self, request, *args, **kwargs):
         data = request.data
-
         if (len(data.get('username')) >= 4) and (len(data.get('password')) >= 8):
             try:
                 user = models.Utilisateur.objects.create_user(
@@ -874,7 +894,6 @@ class MaladieViewSet(viewsets.ViewSet):
 
 
 class MaladieDetailViewSet(viewsets.ViewSet):
-    authentication_classes = [JWTAuthentication]
 
     def get_object(self, id):
         try:
@@ -916,23 +935,25 @@ class MaladieDetailViewSet(viewsets.ViewSet):
 
 
 class FilterMedicamentViewSet(viewsets.GenericViewSet):
+    authentication_classes = [JWTAuthentication]
 
     def list(self, request, *args, **kwargs):
         query = request.data.get('query')
         medicaments = models.Medicament.objects.all()
         for dic in query:
             key = list(dic.keys())[0]
-            if key == "categorie":
-                medicaments = medicaments.filter(categorie__libelle__icontains=dic[key])
+            if key == "categorie" and dic[key]:
+                if (dic[key] != "Tous"):
+                    medicaments = medicaments.filter(categorie__libelle__icontains=dic[key])
 
-            if key == "search":
+            if key == "search" and dic[key]:
                 medicaments = medicaments.filter(
                     Q(nom__icontains=dic[key]) |
                     Q(marque__icontains=dic[key]) |
                     Q(description__icontains=dic[key]) |
                     Q(categorie__libelle__icontains=dic[key]))
 
-            if key == "voix":
+            if key == "voix" and len(dic[key]):
                 medicaments = medicaments.filter(voix__in=dic[key])
 
         page = self.paginate_queryset(medicaments)

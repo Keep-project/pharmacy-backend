@@ -64,10 +64,10 @@ class Pharmacie(models.Model):
         return "{0}".format(self.nom)  
 
     class Meta:
-        ordering=('-created_at',)
+        ordering = ('-created_at',)
 
     def stocks(self, nom):
-        return Medicament.objects.filter(Q(nom=nom) & Q(pharmacie__id=self.id))
+        return Medicament.objects.get(Q(nom=nom) & Q(pharmacie__id=self.id))
 
 
 class Symptome(models.Model):
@@ -221,7 +221,7 @@ class Facture(models.Model):
         return "{0}".format(self.note)
 
     def produits(self):
-        return MedicamentFacture.objects.filter(facture_id = self.id)
+        return MedicamentFacture.objects.filter(facture_id=self.id)
 
 
 class MedicamentFacture(models.Model):
@@ -229,8 +229,8 @@ class MedicamentFacture(models.Model):
     medicament = models.ForeignKey(Medicament, on_delete=models.CASCADE)
     montant = models.IntegerField(null=False, blank=False, default=1)
     quantite = models.IntegerField(null=False, blank=False, default=1)
-    created_at =models.DateTimeField(auto_now_add=True)
-    updated_at =models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def montantTotal(self):
         return self.montant * self.quantite

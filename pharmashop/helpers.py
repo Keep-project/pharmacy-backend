@@ -29,11 +29,13 @@ def distance(lat1, lat2, lon1, lon2):
     r = 6371
 
     # driver code
+    '''
     lat1 = 4.05 # Douala latitude
     lat2 = 3.866667 # Yaoundé latitude
     lon1 = 9.7 # Douala longitude
     lon2 = 11.516667 # Yaoundé longitude
     print(distance(lat1, lat2, lon1, lon2), "K.M")
+    '''
       
     # calculate the result
     return(c * r)
