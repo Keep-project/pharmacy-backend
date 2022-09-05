@@ -1,7 +1,7 @@
 
 
 from django.urls import path, re_path
-from pharmashop import views
+from . import views
 
 urlpatterns = [
 
@@ -12,10 +12,11 @@ urlpatterns = [
     re_path(r"^pharmacie/$", views.PharmacieViewSet.as_view({'get': 'list', 'post': 'post'})),
     re_path(r"^pharmacie/(?P<id>\d+)$",  \
             views.PharmacieDetailViewSet.as_view({'get': 'retrieve', 'put': 'put', 'delete': 'delete'})),
-    re_path(r"^pharmacie/me$", views.ListPhamacieForUser.as_view({'get': 'list', })),
+    re_path(r"^pharmacie/me/$", views.ListPhamacieForUser.as_view({'get': 'list', })),
 
     # Liste des pharmacies proches
-    re_path(r'^pharmacie/proche/(?P<d>\d+)$', views.PharmacieProcheViewSet.as_view({'get': 'list'})),
+    re_path(r'^pharmacie/proche/(?P<d>\d+)$', views.PharmacieProcheViewSet.as_view({'get': 'list', 'post': 'list'})),
+    re_path(r'^pharmacie/filter/$', views.PharmacieFilterViewSet.as_view({'post': 'list'})),
 
     # gestion des categories
     path("categorie/", views.CategorieViewSet.as_view({'get': 'list', 'post': 'post'})),
@@ -34,7 +35,7 @@ urlpatterns = [
     re_path(r"^medicament/(?P<id>\d+)$",  \
             views.MedicamentDetailViewSet.as_view({'get': 'retrieve', 'put': 'put', 'delete': 'delete'})),
     re_path(r"^medicamentDetail/(?P<id>\d+)$", views.DetailMedicamentViewset.as_view({'get': 'retrieve', })),
-    re_path(r"^medicament/me/(?P<id>\d+)$", views.ListMedicamentForPhamacie.as_view({'get': 'list', })),
+    re_path(r"^medicament/me/(?P<id>\d+)$", views.ListMedicamentForPhamacie.as_view({'post': 'list'})),
     re_path(r'^medicament/filter/$', views.FilterMedicamentViewSet.as_view({'post': 'list', }), ),
     re_path(r"^categories/me/(?P<id>\d+)$", views.ListCategorieForMedicament.as_view({'get': 'list', })),
 
@@ -69,6 +70,8 @@ urlpatterns = [
     re_path(r"^facture/(?P<id>\d+)$",  \
             views.FactureDetailViewSet.as_view({'get': 'retrieve', 'put': 'put', 'delete': 'delete'}),  \
             name='detail_facture'),
+    re_path(r"^facture/me/(?P<idPharmacy>\d+)$", views.FactureForPharmacyViewSet.as_view({'get': 'list', 'post': 'list'}), \
+            name='liste_facture_pharmacie'),
 
     # Gestion des entrepôts
     re_path(r"^entrepot/$", views.EntrepotViewSet.as_view({'get': 'list', 'post': 'post'}), name='liste_entrepot'),
@@ -83,6 +86,8 @@ urlpatterns = [
     re_path(r"^inventaire/(?P<id>\d+)$", \
             views.InventaireDetailViewSet.as_view({'get': 'retrieve', 'put': 'put', 'delete': 'delete'}),  \
             name='detail_entrepot'),
+    re_path(r"^inventaire/me/(?P<idPharmacy>\d+)$", views.InventaireForPharmacyViewSet.as_view({'get': 'list', 'post': 'list'}), \
+            name='liste_inventaire_pharmacie'),
 
 
     # Gestion des mouvements de stock

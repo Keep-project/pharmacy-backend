@@ -5,11 +5,11 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.db.models import Q
 from django.db import IntegrityError, transaction
 import django
-import math
 
-from pharmashop import models, serializers
+from . import models, serializers
 
-from .helpers import distance, generateReport, hasPermission, addPermission, removePermission, clearPermissions
+from .helpers import distance, generateReport, hasPermission, addPermission, removePermission, clearPermissions, \
+    base64_file
 import datetime
 
 
@@ -110,6 +110,26 @@ class MouvementStockDetailViewSet(viewsets.ViewSet):
                              'message': "Mouvement supprimé avec succès"}, status=status.HTTP_201_CREATED)
         return Response({'success': False, 'status': status.HTTP_404_NOT_FOUND, \
                          "message": "Le mouvement ayant l'id = {0} n'existe pas !".format(id), })
+
+
+class InventaireForPharmacyViewSet(viewsets.GenericViewSet):
+    '''
+        Liste des inventaires d'une pharmacie
+    '''
+    authentication_classes = [JWTAuthentication]
+
+    def list(self, request, idPharmacy=None, *args, **kwargs):
+        '''
+            Faire apprtenir un utilisateur à une pharmacie dans le model de la BD
+            Ici récupérer la liste de utilisateur enregistrés dans la pharmacy idPharmacy \
+            et passer en paramètre du filtre
+        '''
+        entrepots = models.Entrepot.objects.filter(pharmacie=int(idPharmacy))
+        entrepots_ids = [e.id for e in entrepots]
+        inventaires = models.Inventaire.objects.filter(entrepot__in=entrepots_ids)
+        page = self.paginate_queryset(inventaires)
+        serializer = serializers.InventaireSerializers(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
 
 class InventaireViewSet(viewsets.GenericViewSet):
@@ -261,6 +281,26 @@ class EntrepotDetailViewSet(viewsets.ViewSet):
                          "message": "L'entrepôt ayant l'id = {0} n'existe pas !".format(id), })
 
 
+class FactureForPharmacyViewSet(viewsets.GenericViewSet):
+    '''
+        Liste des factures d'une pharmacie
+    '''
+    authentication_classes = [JWTAuthentication]
+
+    def list(self, request, idPharmacy=None, *args, **kwargs):
+        '''
+            Faire apprtenir un utilisateur à une pharmacie dans le model de la BD
+            Ici récupérer la liste de utilisateur enregistrés dans la pharmacy idPharmacy \
+            et passer en paramètre du filtre
+        '''
+
+        # pharmacy = models.Pharmacie.objects.get(pk=int(idPharmacy))
+        factures = models.Facture.objects.filter(utilisateur__in=[request.user.id])
+        page = self.paginate_queryset(factures)
+        serializer = serializers.FactureSerializers(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
+
 class FactureViewSet(viewsets.GenericViewSet):
     '''
         Cette méthode permet de lister et sauvegarder les factures des clients
@@ -380,21 +420,31 @@ class FactureDetailViewSet(viewsets.ViewSet):
 
 
 class PharmacieProcheViewSet(viewsets.GenericViewSet):
+    authentication_classes = [JWTAuthentication]
 
     def list(self, request, d=0, *args, **kwargs):
-        lat1 = 4.05  # Douala latitude
-        lat2 = 3.866667  # Yaoundé latitude
-        lon1 = 9.7  # Douala longitude
-        lon2 = 11.516667  # Yaoundé longitude
-        pharmacies = models.Pharmacie.objects.all()
+        latitude = float(request.data.get('latitude', 0))  # latitude de l'utilisateur
+        longitude = float(request.data.get('longitude', 0))  # longitude de l'utilisateur
+        pharmacies = models.Pharmacie.objects.all()  # Liste des pharmacies
         mylist = []
         for p in pharmacies:
-            if int(distance(lat2, p.latitude, lon2, p.longitude)) <= int(d):
+            if int(distance(latitude, p.latitude, longitude, p.longitude)) <= int(d):
                 serializer = serializers.PharmacieSerializers(p)
                 mylist.append(serializer.data)
         return Response({'status': status.HTTP_200_OK, 'success': True, 'message': \
             'liste des pharmacies dans un rayon {0} KM'.format(d), 'count': len(mylist), \
-                         'result': mylist}, status=status.HTTP_200_OK)
+                         'results': mylist}, status=status.HTTP_200_OK)
+
+
+class PharmacieFilterViewSet(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
+
+    def list(self, request, *args, **kwargs):
+        print(request.data.get('search'))
+        pharmacies = models.Pharmacie.objects.filter(nom__icontains=request.data.get('search', ''))
+        serializer = serializers.PharmacieSerializers(pharmacies, many=True)
+        return Response({'status': status.HTTP_200_OK, 'success': True, 'message': \
+            "Liste des pharmacies", 'results': serializer.data, }, status=status.HTTP_200_OK,)
 
 
 class PharmacieViewSet(viewsets.GenericViewSet):
@@ -466,10 +516,10 @@ class ListPhamacieForUser(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
 
     def list(self, request, *args, **kwargs):
-        listPhamacie = models.Pharmacie.objects.filter(user=request.user.id)
-        Serializer = serializers.PharmacieSerializers(listPhamacie, many=True)
+        phamacies = models.Pharmacie.objects.filter(user_id=request.user.id)
+        serializer = serializers.PharmacieSerializers(phamacies, many=True)
         return Response({'status': status.HTTP_200_OK, 'success': True, 'message': \
-            "Liste des pharmacies d'un utilisateur", 'results': Serializer.data, }, status=status.HTTP_200_OK, )
+            "Liste des pharmacies d'un utilisateur", 'results': serializer.data, }, status=status.HTTP_200_OK, )
 
 
 class CategorieViewSet(viewsets.ViewSet):
@@ -617,11 +667,50 @@ class UtilisateurDetailViewSet(viewsets.ViewSet):
             "L'utilisateur ayant l'id = {0} n'existe pas !".format(id)}, status=status.HTTP_404_NOT_FOUND, )
 
 
+class FilterMedicamentViewSet(viewsets.GenericViewSet):
+    authentication_classes = [JWTAuthentication]
+
+    def list(self, request, *args, **kwargs):
+        query = request.data.get('query', [])
+        medicaments = models.Medicament.objects.all().order_by("prix", "qte_stock")
+        print(query)
+        for dic in query:
+            key = list(dic.keys())[0]
+            if key == "position" and len(dic[key]):
+                latitude = float(dic[key][0])  # latitude de l'utilisateur
+                longitude = float(dic[key][1])  # longitude de l'utilisateur
+                pharmacies = models.Pharmacie.objects.all()  # Liste des pharmacies
+                d = dic[key][2]  # Rayon de recherche
+                pharmacies_ids = []
+                for p in pharmacies:
+                    if float(distance(latitude, p.latitude, longitude, p.longitude)) <= float(d):
+                        pharmacies_ids.append(p.pk)
+                medicaments = medicaments.filter(pharmacie_id__in=pharmacies_ids)
+
+            if key == "categorie" and dic[key]:
+                if dic[key] != "Tous":
+                    medicaments = medicaments.filter(categorie__libelle__icontains=dic[key])
+
+            if key == "search" and dic[key]:
+                medicaments = medicaments.filter(
+                    Q(nom__icontains=dic[key]) |
+                    Q(marque__icontains=dic[key]) |
+                    Q(description__icontains=dic[key]) |
+                    Q(categorie__libelle__icontains=dic[key]))
+
+            if key == "voix" and len(dic[key]):
+                medicaments = medicaments.filter(voix__in=dic[key])
+
+        page = self.paginate_queryset(medicaments)
+        serializer = serializers.MedicamentSerialisers(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
+
 class MedicamentViewSet(viewsets.GenericViewSet):
     authentication_classes = [JWTAuthentication]
 
     def list(self, request):
-        medicaments = models.Medicament.objects.all()
+        medicaments = models.Medicament.objects.all().order_by("prix", "qte_stock")
         page = self.paginate_queryset(medicaments)
         serializer = serializers.MedicamentSerialisers(page, many=True)
         return self.get_paginated_response(serializer.data)
@@ -629,9 +718,8 @@ class MedicamentViewSet(viewsets.GenericViewSet):
     def post(self, request, *args, **kwarg):
         request.data['user'] = models.Utilisateur.objects.get(id=request.user.id)
         serializer = serializers.MedicamentSerialisers(data=request.data)
-
         if serializer.is_valid():
-            serializer.save(image=request.FILES.get('image'))
+            serializer.save(image=base64_file(request.data.get('image')))
             models.HistoriquePrix(
                 basePrix=request.data.get('basePrix') if request.data.get('basePrix') else "HT",
                 tva=request.data.get('tva') if request.data.get('tva') else 19.25,
@@ -710,15 +798,31 @@ class MedicamentDetailViewSet(viewsets.ViewSet):
                         status=status.HTTP_404_NOT_FOUND, )
 
 
-class ListMedicamentForPhamacie(viewsets.ViewSet):
+class ListMedicamentForPhamacie(viewsets.GenericViewSet):
     authentication_classes = [JWTAuthentication]
 
     def list(self, request, id=None, *args, **kwargs):
-        medicaments = models.Medicament.objects.filter(pharmacie__id=int(id))
-        Serializer = serializers.MedicamentSerialisers(medicaments, many=True)
-        return Response({'status': status.HTTP_200_OK, 'success': True, 'message': \
-            "liste des médicaments d'une pharmacie", 'results': Serializer.data}, \
-                        status=status.HTTP_200_OK)
+        query = request.data.get('query', [])
+        medicaments = models.Medicament.objects.filter(pharmacie__id=int(id)).order_by('qte_stock', 'nom')
+        for dic in query:
+            key = list(dic.keys())[0]
+            if key == "categorie" and dic[key]:
+                if dic[key] != "Tous":
+                    medicaments = medicaments.filter(categorie__libelle__icontains=dic[key])
+
+            if key == "search" and dic[key]:
+                medicaments = medicaments.filter(
+                    Q(nom__icontains=dic[key]) |
+                    Q(marque__icontains=dic[key]) |
+                    Q(description__icontains=dic[key]) |
+                    Q(categorie__libelle__icontains=dic[key]))
+
+            if key == "voix" and len(dic[key]):
+                medicaments = medicaments.filter(voix__in=dic[key])
+
+        page = self.paginate_queryset(medicaments)
+        serializer = serializers.MedicamentSerialisers(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
 
 class ListCategorieForMedicament(viewsets.ViewSet):
@@ -932,33 +1036,6 @@ class MaladieDetailViewSet(viewsets.ViewSet):
         return Response({'status': status.HTTP_404_NOT_FOUND, 'success': False, \
                          "message": "La consultation ayant l'id = {0} n'existe pas !".format(id)}, \
                         status=status.HTTP_404_NOT_FOUND, )
-
-
-class FilterMedicamentViewSet(viewsets.GenericViewSet):
-    authentication_classes = [JWTAuthentication]
-
-    def list(self, request, *args, **kwargs):
-        query = request.data.get('query')
-        medicaments = models.Medicament.objects.all()
-        for dic in query:
-            key = list(dic.keys())[0]
-            if key == "categorie" and dic[key]:
-                if (dic[key] != "Tous"):
-                    medicaments = medicaments.filter(categorie__libelle__icontains=dic[key])
-
-            if key == "search" and dic[key]:
-                medicaments = medicaments.filter(
-                    Q(nom__icontains=dic[key]) |
-                    Q(marque__icontains=dic[key]) |
-                    Q(description__icontains=dic[key]) |
-                    Q(categorie__libelle__icontains=dic[key]))
-
-            if key == "voix" and len(dic[key]):
-                medicaments = medicaments.filter(voix__in=dic[key])
-
-        page = self.paginate_queryset(medicaments)
-        serializer = serializers.MedicamentSerialisers(page, many=True)
-        return self.get_paginated_response(serializer.data)
 
 
 class DetailMedicamentViewset(viewsets.ViewSet):

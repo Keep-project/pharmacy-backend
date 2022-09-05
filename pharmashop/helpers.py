@@ -1,10 +1,12 @@
-
+import base64
 from math import radians, cos, sin, asin, sqrt
 
+from django.core.files.base import ContentFile
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 from django.shortcuts import HttpResponse
 from django.contrib.auth.models import Permission
+from django.core.mail import send_mail
 
 
 # ☺ Python 3 program to calculate Distance Between Two Points on Earth
@@ -54,7 +56,12 @@ def generateReport(params: dict):
 
     if pisa_status.err:
         return
-    return response 
+    return response
+
+
+def send_email():
+    send_mail("Salutation", "Bonjour M/Mme. Comment allez-vous ?", 'larissasignie@gmail.com', \
+              ['patrickkennenl@gmail.com'], fail_silently=False)
 
 
 def hasPermission(request=None, codename=None):
@@ -99,3 +106,11 @@ def clearPermissions(request=None):
     request.user.user_permissions.clear()
     request.user.save()
     return True
+
+
+def base64_file(data, name=None):
+    _format, _img_str = data.split(';base64,')
+    _name, ext = _format.split('/')
+    if not name:
+        name = _name.split(":")[-1]
+    return ContentFile(base64.b64decode(_img_str), name='{}.{}'.format(name, ext))

@@ -62,6 +62,7 @@ class PharmacieSerializers(serializers.ModelSerializer):
             'nom',
             'localisation',
             'tel',
+            'email',
             'latitude',
             'longitude',
             'h_ouverture',
@@ -82,6 +83,7 @@ class MedicamentSerialisers(serializers.ModelSerializer):
             'marque',
             'date_exp',
             'get_image_url',
+            'get_pharmacie_name',
             'masse',
             'qte_stock',
             'stockAlert',
@@ -124,6 +126,7 @@ class MedicamentFactureSerializers(serializers.ModelSerializer):
             'id',
             'facture',
             'medicament',
+            'get_medecine_name',
             'montant',
             'quantite',
             'montantTotal',
@@ -175,6 +178,7 @@ class FactureSerializers(serializers.ModelSerializer):
         fields = [
             'id',
             'utilisateur',
+            'get_user_name',
             #'medicaments',
             'montantTotal',
             'quantiteTotal',
@@ -206,6 +210,7 @@ class EntrepotSerializers(serializers.ModelSerializer):
 
 class EntrepotDetailsSerializers(serializers.ModelSerializer):
     medicaments = MedicamentSerialisers(many=True, read_only=True)
+
     class Meta:
         model = models.Entrepot
 
@@ -232,6 +237,7 @@ class InventaireMedicamentSerializers(serializers.ModelSerializer):
             'id',
             'inventaire',
             'medicament',
+            'get_medecine_name',
             'quantiteAttendue',
             'quantiteReelle',
             'created_at',
@@ -241,6 +247,7 @@ class InventaireMedicamentSerializers(serializers.ModelSerializer):
 
 class InventaireSerializers(serializers.ModelSerializer):
     produits = InventaireMedicamentSerializers(many=True, read_only=True)
+
     class Meta:
         model = models.Inventaire
 
@@ -249,6 +256,7 @@ class InventaireSerializers(serializers.ModelSerializer):
             'libelle',
             'entrepot',
             # 'medicaments',
+            'get_entrepot_name',
             'created_at',
             'updated_at',
             'produits'

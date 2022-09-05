@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-tavds@y#gzw$&5fu(v4ufl&=xawf5#8&^u(yd-b!!8ruyt@hbd
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', '192.168.220.1']
+ALLOWED_HOSTS = ['127.0.0.1', '192.168.220.1', '192.168.43.60']
 
 
 # Application definition
@@ -165,7 +165,6 @@ REST_FRAMEWORK = {
 }
 
 
-
 from datetime import timedelta
 
 SIMPLE_JWT = {
@@ -196,4 +195,24 @@ SIMPLE_JWT = {
     # 'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
     # 'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
+
+# Tuto pour produire un pdf
+# https://www.youtube.com/watch?v=B7EIK9yVtGY
+# https://www.codingforentrepreneurs.com/blog/html-template-to-pdf-in-django/# Configuration pour l'envoi d'email
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST_USER = 'patrickkennenl@gmail.com'
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    EMAIL_USE_SSL = False
+    EMAIL_HOST_PASSWORD = 'gwvbttraeeqddgdn'
+
+    # Site important a consulter
+    # https://www.programcreek.com/python/example/56082/django.core.mail.EmailMultiAlternatives
+    # https://anymail.readthedocs.io/en/stable/sending/django_email/
+
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 

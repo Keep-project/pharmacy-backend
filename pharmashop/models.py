@@ -1,11 +1,12 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models import Q, Sum
+import datetime
 
 
 # Create your models here.
 
-# liste des models
+#  liste des models
 #  -pharmacie
 #  -medicament
 #  -catégorie
@@ -17,6 +18,12 @@ from django.db.models import Q, Sum
 
 
 BASE_URL = 'http://192.168.220.1:8000'
+# BASE_URL = 'http://192.168.43.60:8000'
+
+
+def upload_path(instance, filename):
+    date = datetime.datetime.now().timestamp()
+    return '/'.join(["images/", '{0}'.format(date) + filename])
 
 
 class Categorie(models.Model):
@@ -40,10 +47,10 @@ class Utilisateur(User):
     adresse = models.CharField(max_length=255, default='ras')
     avatar = models.FileField(upload_to='avatars/', blank=True, null=True)
     status = models.CharField(max_length=255, blank=False, default="user")
-    experience = models.CharField(max_length=255,blank=False,  default=0)
+    experience = models.CharField(max_length=255, blank=False,  default=0)
 
     def __str__(self):
-        return "{0}".format(self.username) 
+        return "{0}".format(self.username)
 
 
 class Pharmacie(models.Model):
@@ -51,10 +58,11 @@ class Pharmacie(models.Model):
     nom = models.CharField(null=False, max_length=255, default='')
     localisation = models.CharField(null=False, max_length=255, default='')
     tel = models.CharField(null=False, max_length=255, default='')
-    latitude = models.FloatField(null=False,default=0)
+    email = models.EmailField( null=True, blank=True, default="patrick1kenne@gmail.com")
+    latitude = models.FloatField(null=False, default=0)
     longitude = models.FloatField(null=False, default=0)
-    h_ouverture = models.DateTimeField(null=True,)
-    h_fermeture = models.DateTimeField(null=True)
+    h_ouverture = models.CharField(null=True, default="08:00 AM", max_length=15)
+    h_fermeture = models.CharField(null=True, default="08:00 PM", max_length=15)
     user = models.ForeignKey(Utilisateur, related_name="pharmacies", on_delete=models.CASCADE, null=False, blank=False)
 
     created_at = models.DateTimeField(auto_now_add=True,)
@@ -71,12 +79,12 @@ class Pharmacie(models.Model):
 
 
 class Symptome(models.Model):
-    libelle= models.CharField(max_length=50)
-    created_at =models.DateTimeField(auto_now_add=True)
-    updated_at =models.DateTimeField(auto_now=True)
+    libelle = models.CharField(max_length=50)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-       ordering=("-created_at",) 
+       ordering = ("-created_at",)
 
     def __str__(self):
         return "{0}".format(self.libelle)    
@@ -87,14 +95,14 @@ class Medicament(models.Model):
     choices = (
         (0, 'bucale'),
         (1, 'injection'),
-        (2, 'anale')
+        (2, 'anale'),
     )
     nom = models.CharField(max_length=255, null=False, default="")
     prix = models.IntegerField(null=False, blank=False, default=1)
     # prixAchat = models.IntegerField(null=False, blank=False, default=1)
-    marque = models.CharField(max_length=255, null=False, default="")
-    date_exp = models.DateTimeField(null=False, default="2042-06-10T17:07:03.121812Z")
-    image = models.FileField(upload_to='images/', blank=False, null= False)
+    marque = models.CharField(max_length=255, null=True, default="")
+    date_exp = models.DateTimeField(null=True, blank=True, default="2042-06-10T17:07:03.121812Z")
+    image = models.FileField(upload_to=upload_path, blank=False, null=False)
     masse = models.CharField(max_length=10, null=False, default="")
     qte_stock = models.IntegerField(null=False, blank=False, default=1)
     stockAlert = models.IntegerField(null=False, blank=False, default=1)
@@ -128,25 +136,28 @@ class Medicament(models.Model):
         ids = [medicament.pharmacie_id for medicament in medicaments]
         pharmas = Pharmacie.objects.filter(id__in=ids)
         liste = [{
-                    "id": p.id,
-                    "nom": p.nom,
-                    "localisation": p.localisation,
-                    "tel": p.tel,
-                    "stock": Medicament.objects.filter(
-                        Q(nom=self.nom) & \
-                        Q(pharmacie=p.id)
-                    ).aggregate(stock=Sum('qte_stock'))['stock'],
-                    "latitude": p.latitude,
-                    "longitude": p.longitude,
-                    "h_ouverture": str(p.h_ouverture),
-                    "h_fermeture": str(p.h_fermeture),
-                    "user": p.user_id,
-                    "created_at": str(p.created_at),
-                    "updated_at": str(p.updated_at)
+            "id": p.id,
+            "nom": p.nom,
+            "localisation": p.localisation,
+            "tel": p.tel,
+            "stock": Medicament.objects.filter(
+                Q(nom=self.nom) &  \
+                Q(pharmacie=p.id)
+            ).aggregate(stock=Sum('qte_stock'))['stock'],
+            "latitude": p.latitude,
+            "longitude": p.longitude,
+            "h_ouverture": str(p.h_ouverture),
+            "h_fermeture": str(p.h_fermeture),
+            "user": p.user_id,
+            "created_at": str(p.created_at),
+            "updated_at": str(p.updated_at)
                 }
                 for p in pharmas
             ]
         return liste
+
+    def get_pharmacie_name(self):
+        return Pharmacie.objects.get(id=self.pharmacie_id).nom
 
     def entrepots(self):
         return Entrepot.objects.filter(Q(id=self.entrepot_id))
@@ -211,8 +222,8 @@ class Facture(models.Model):
     reduction = models.IntegerField(null=False, blank=False, default=0)
     note = models.TextField()
     # dateEcheance = models.DateTimeField()
-    created_at =models.DateTimeField(auto_now_add=True)
-    updated_at =models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ('-created_at',)
@@ -222,6 +233,9 @@ class Facture(models.Model):
 
     def produits(self):
         return MedicamentFacture.objects.filter(facture_id=self.id)
+
+    def get_user_name(self):
+        return Utilisateur.objects.get(pk=self.utilisateur_id).username
 
 
 class MedicamentFacture(models.Model):
@@ -234,6 +248,9 @@ class MedicamentFacture(models.Model):
 
     def montantTotal(self):
         return self.montant * self.quantite
+
+    def get_medecine_name(self):
+        return Medicament.objects.get(pk=self.medicament_id).nom
 
     class Meta:
         ordering = ('-created_at',)
@@ -257,7 +274,6 @@ class Entrepot(models.Model):
         return "{0}".format(self.nom)
 
 """
-
 class EntrepotMedicament(models.Model):
     '''
         Cette classe liste les entrepôts d'un médicament donné
@@ -278,13 +294,16 @@ class Inventaire(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering=('-created_at',)
+        ordering = ('-created_at',)
 
     def __str__(self):
         return "{0}".format(self.libelle)
 
     def produits(self):
-        return InventaireMedicament.objects.filter(inventaire_id = self.id)
+        return InventaireMedicament.objects.filter(inventaire_id=self.id)
+
+    def get_entrepot_name(self):
+        return Entrepot.objects.get(pk=self.entrepot_id).nom
 
 
 class InventaireMedicament(models.Model):
@@ -294,6 +313,9 @@ class InventaireMedicament(models.Model):
     quantiteReelle = models.IntegerField(null=False, blank=False, default=1)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def get_medecine_name(self):
+        return Medicament.objects.get(pk=self.medicament_id).nom
 
 
 class MouvementStock(models.Model):
