@@ -271,6 +271,8 @@ class MouvementStockSerializers(serializers.ModelSerializer):
             'id',
             'entrepot',
             'description',
+            'medicament',
+            'get_medecine_name',
             'quantite',
             'created_at',
             'updated_at'

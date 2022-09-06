@@ -44,6 +44,34 @@ class HasPermissionViewSet(viewsets.GenericViewSet):
             "Permission non accodée"}, status=status.HTTP_403_FORBIDDEN)
 
 
+class MouvementStockForPharmacyViewSet(viewsets.GenericViewSet):
+    '''
+        Cette méthode permet de lister les mouvements de stock d'une pharmacie
+    '''
+    authentication_classes = [JWTAuthentication]
+
+    def list(self, request, idPharmacy=None, *args, **kwargs):
+        entrepots = models.Entrepot.objects.filter(pharmacie=idPharmacy)
+        entrepots_ids = [e.pk for e in entrepots]
+        mouvements = models.MouvementStock.objects.filter(entrepot_id__in=entrepots_ids)
+        page = self.paginate_queryset(mouvements)
+        serializer = serializers.MouvementStockSerializers(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
+
+class MouvementStockForMedecineViewSet(viewsets.GenericViewSet):
+    '''
+        Cette méthode permet de lister les mouvements de stock d'un produit
+    '''
+    authentication_classes = [JWTAuthentication]
+
+    def list(self, request, idMedecine=None, *args, **kwargs):
+        mouvements = models.MouvementStock.objects.filter(medicament_id=idMedecine)
+        page = self.paginate_queryset(mouvements)
+        serializer = serializers.MouvementStockSerializers(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
+
 class MouvementStockViewSet(viewsets.GenericViewSet):
     '''
         Cette méthode permet de lister et sauvegarder les mouvements de stock effectués des pharmacies
@@ -212,17 +240,24 @@ class InventaireDetailViewSet(viewsets.ViewSet):
                          "message": "L'inventaire ayant l'id = {0} n'existe pas !".format(id)})
 
 
-class EntrepotViewSet(viewsets.GenericViewSet):
+class EntrepotForPharmacyViewSet(viewsets.GenericViewSet):
     '''
         Cette méthode permet de lister et sauvegarder les entrepôts des pharmacies
     '''
     authentication_classes = [JWTAuthentication]
 
-    def list(self, request, *args, **kwargs):
-        entrepot = models.Entrepot.objects.all()
+    def list(self, request, idPharmacy=None, *args, **kwargs):
+        entrepot = models.Entrepot.objects.filter(pharmacie_id=idPharmacy)
         page = self.paginate_queryset(entrepot)
         serializer = serializers.EntrepotSerializers(page, many=True)
         return self.get_paginated_response(serializer.data)
+
+
+class EntrepotViewSet(viewsets.GenericViewSet):
+    '''
+        Cette méthode permet de lister et sauvegarder les entrepôts des pharmacies
+    '''
+    authentication_classes = [JWTAuthentication]
 
     def post(self, request, *args, **kwargs):
         serializer = serializers.EntrepotSerializers(data=request.data)
@@ -318,7 +353,7 @@ class FactureViewSet(viewsets.GenericViewSet):
         if not request.data['note']:
             request.data['note'] = "Facture pour paiement complèt de {0} médicament(s) à raison de: {0} F" \
                 .format(request.data.get('montantTotal'), request.data.get('montantTotal'))
-
+        request.data['utilisateur'] = request.user.id
         serializer = serializers.FactureSerializers(data=request.data)
         if serializer.is_valid():
             ''' Création de la facture '''
@@ -355,6 +390,7 @@ class FactureViewSet(viewsets.GenericViewSet):
                         ''' Enregistrement d'une sortie de stock du produit '''
                         models.MouvementStock(
                             entrepot=models.Entrepot.objects.get(id=old_medicament.entrepot_id),
+                            medicament=old_medicament,
                             description="Sortie de stock du produit {0} pour le compte de la facture de référence {1} \
                              effectuée par: {2}.".format(old_medicament.nom, new_facture_id, request.user.username),
                             quantite=- quantite

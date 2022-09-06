@@ -320,6 +320,7 @@ class InventaireMedicament(models.Model):
 
 class MouvementStock(models.Model):
     entrepot = models.ForeignKey(Entrepot, on_delete=models.CASCADE)
+    medicament = models.ForeignKey(Medicament, on_delete=models.CASCADE, default=1)
     description = models.TextField(default="")
     quantite = models.IntegerField(null=False, blank=False, default=1)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -330,6 +331,9 @@ class MouvementStock(models.Model):
 
     def __str__(self):
         return self.description
+
+    def get_medecine_name(self):
+        return Medicament.objects.get(pk=self.medicament_id).nom
 
 
 class MouvementInventaire(models.Model):
