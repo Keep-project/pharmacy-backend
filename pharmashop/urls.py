@@ -78,7 +78,8 @@ urlpatterns = [
             views.EntrepotDetailViewSet.as_view({'get': 'retrieve', 'put': 'put', 'delete': 'delete'}),  \
             name='detail_entrepot'),
 
-    re_path(r"^entrepot/pharmacy/(?P<idPharmacy>\d+)$", views.EntrepotForPharmacyViewSet.as_view({'get': 'list', 'post': 'list'}), name='poster_entrepot'),
+    re_path(r"^entrepot/pharmacy/(?P<idPharmacy>\d+)$", views.EntrepotForPharmacyViewSet.as_view({'get': 'list', \
+            'post': 'list'}), name='poster_entrepot'),
 
 
     # Gestion des inventaires

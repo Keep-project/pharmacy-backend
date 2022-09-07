@@ -1,3 +1,4 @@
+
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
@@ -357,28 +358,17 @@ class FactureViewSet(viewsets.GenericViewSet):
         serializer = serializers.FactureSerializers(data=request.data)
         if serializer.is_valid():
             ''' Création de la facture '''
-
             try:
                 with transaction.atomic():
                     serializer.save()
                     new_facture_id = serializer.data.get('id')
                     for data in medicaments:
-                        '''
-                            Mise à jour des quantités en stock des médicaments inclus dans la facture
-                        '''
+                        ''' Mise à jour des quantités en stock des médicaments inclus dans la facture '''
                         quantite = data.get('quantite')
+
                         old_medicament = models.Medicament.objects.get(id=data.get('id'))
-                        new_medicament = {
-                            "id": data.get('id'),
-                            "qte_stock": old_medicament.qte_stock - quantite,
-                            "categorie": old_medicament.categorie_id,
-                            "pharmacie": old_medicament.pharmacie_id,
-                            "entrepot": old_medicament.entrepot_id,
-                        }
-                        medicament_serialiser = serializers.MedicamentSerialisers(old_medicament, data=new_medicament)
-                        if medicament_serialiser.is_valid():
-                            ''' Sauvegarde de la mise à jour du stock '''
-                            medicament_serialiser.save()
+                        old_medicament.qte_stock = old_medicament.qte_stock - quantite
+                        old_medicament.save()
 
                         ''' Enregistrement d'une ligne de produit de la facture '''
                         models.MedicamentFacture(
@@ -387,6 +377,7 @@ class FactureViewSet(viewsets.GenericViewSet):
                             montant=data.get('prix'),
                             quantite=quantite
                         ).save()
+
                         ''' Enregistrement d'une sortie de stock du produit '''
                         models.MouvementStock(
                             entrepot=models.Entrepot.objects.get(id=old_medicament.entrepot_id),
@@ -400,10 +391,10 @@ class FactureViewSet(viewsets.GenericViewSet):
                                      'message': 'Factures créée avec succès', \
                                  'lignes': len(medicaments), 'results': serializer.data}, status=status.HTTP_200_OK)
 
-            except IntegrityError as e:
+            except Exception as e:
                 return Response({'success': False, 'status': status.HTTP_500_INTERNAL_SERVER_ERROR, \
-                                 'message': 'Une erreur est apparue. Merci de recommencer votre requête.', \
-                                'results': e}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    'message': 'Une erreur est apparue. Merci de vérifier les quantités et de recommencer votre requête.', \
+                    'results': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response({'status': status.HTTP_400_BAD_REQUEST, 'results': serializer.errors}, \
                         status=status.HTTP_400_BAD_REQUEST)
@@ -755,16 +746,31 @@ class MedicamentViewSet(viewsets.GenericViewSet):
         request.data['user'] = models.Utilisateur.objects.get(id=request.user.id)
         serializer = serializers.MedicamentSerialisers(data=request.data)
         if serializer.is_valid():
-            serializer.save(image=base64_file(request.data.get('image')))
-            models.HistoriquePrix(
-                basePrix=request.data.get('basePrix') if request.data.get('basePrix') else "HT",
-                tva=request.data.get('tva') if request.data.get('tva') else 19.25,
-                prixVente=request.data.get('prix'),
-                medicament=models.Medicament.objects.get(id=serializer.data.get('id')),
-                utilisateur=models.Utilisateur.objects.get(id=request.user.id)
-            ).save()
-            return Response({'success': True, 'status': status.HTTP_200_OK, 'message': \
-                'Médicament crée avec succès', 'results': serializer.data}, status=status.HTTP_200_OK)
+            try:
+                with transaction.atomic():
+                    serializer.save(image=base64_file(request.data.get('image')))
+                    models.HistoriquePrix(
+                        basePrix=request.data.get('basePrix') if request.data.get('basePrix') else "HT",
+                        tva=request.data.get('tva') if request.data.get('tva') else 19.25,
+                        prixVente=request.data.get('prix'),
+                        medicament=models.Medicament.objects.get(id=serializer.data.get('id')),
+                        utilisateur=models.Utilisateur.objects.get(id=request.user.id)
+                    ).save()
+                    ''' Enregistrement d'une entrée de stock du produit '''
+                    models.MouvementStock(
+                        entrepot=models.Entrepot.objects.get(id=request.data.get('entrepot')),
+                        medicament=models.Medicament.objects.get(id=serializer.data.get('id')),
+                        description="Entrée (création) en stock du produit {0} avec pour stock initial {1}. Ajouté par: {2}." \
+                            .format(request.data.get('nom'), request.data.get('qte_stock'), request.user.username),
+                        quantite=request.data.get('qte_stock'),
+                    ).save()
+                    return Response({'success': True, 'status': status.HTTP_200_OK, 'message': \
+                        'Médicament crée avec succès', 'results': serializer.data}, status=status.HTTP_200_OK)
+
+            except IntegrityError as e:
+                return Response({'success': False, 'status': status.HTTP_500_INTERNAL_SERVER_ERROR, \
+                                 'message': 'Une erreur est apparue. Merci de recommencer votre requête.', \
+                                'results': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         elif django.db.utils.IntegrityError:
             return Response({'status': status.HTTP_400_BAD_REQUEST, 'success': False, \
@@ -804,8 +810,27 @@ class MedicamentDetailViewSet(viewsets.ViewSet):
         if medicament:
             serializer = serializers.MedicamentSerialisers(medicament, data=request.data)
             if serializer.is_valid():
+                newstock = request.data.get('qte_stock')
+                if int(newstock) > int(medicament.qte_stock):
+                    ''' Enregistrement d'une entrée de stock du produit '''
+                    models.MouvementStock(
+                        entrepot=models.Entrepot.objects.get(id=request.data.get('entrepot')),
+                        medicament=models.Medicament.objects.get(id=int(id)),
+                        description="Mise à jour du stock du produit {0}. Quantité initiale {1}, quantité finale {2}. Ajouté par: {3}." \
+                            .format(request.data.get('nom'), medicament.qte_stock, newstock, request.user.username),
+                        quantite=+(request.data.get('qte_stock') - int(medicament.qte_stock)),
+                    ).save()
+                if int(newstock) < int(medicament.qte_stock):
+                    ''' Enregistrement d'une entrée de stock du produit '''
+                    models.MouvementStock(
+                        entrepot=models.Entrepot.objects.get(id=request.data.get('entrepot')),
+                        medicament=models.Medicament.objects.get(id=int(id)),
+                        description="Mise à jour du stock du produit {0}. Quantité initiale {1}, quantité finale {2}. Rétiré par: {1}." \
+                            .format(request.data.get('nom'), request.user.username),
+                        quantite=-(int(medicament.qte_stock) - request.data.get('qte_stock')),
+                    ).save()
+                serializer.save()
                 if medicament.prix != request.data.get('prix'):
-                    serializer.save()
                     models.HistoriquePrix(
                         basePrix=request.data.get('basePrix') if request.data.get('basePrix') else "HT",
                         tva=request.data.get('tva') if request.data.get('tva') else 19.25,

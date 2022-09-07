@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 from  django.contrib.auth.models import User
-from pharmashop import models
+from . import models
 
 
 class CategorieSerializers(serializers.ModelSerializer):
@@ -73,7 +73,27 @@ class PharmacieSerializers(serializers.ModelSerializer):
         ]        
 
 
+class EntrepotSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = models.Entrepot
+
+        fields = [
+            'id',
+            'nom',
+            'pays',
+            'ville',
+            'telephone',
+            'description',
+            'pharmacie',
+            'created_at',
+            'updated_at'
+        ]
+
+
 class MedicamentSerialisers(serializers.ModelSerializer):
+    #pharmacie=PharmacieSerializers(many=False, read_only=True)
+    #entrepot=EntrepotSerializers(many=False, read_only=True)
+
     class Meta:
         model = models.Medicament
         fields = [
@@ -95,23 +115,6 @@ class MedicamentSerialisers(serializers.ModelSerializer):
             'voix',
             'pharmacie',
             'entrepot',
-            'created_at',
-            'updated_at'
-        ]
-
-
-class EntrepotSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = models.Entrepot
-
-        fields = [
-            'id',
-            'nom',
-            'pays',
-            'ville',
-            'telephone',
-            'description',
-            'pharmacie',
             'created_at',
             'updated_at'
         ]
@@ -273,6 +276,7 @@ class MouvementStockSerializers(serializers.ModelSerializer):
             'description',
             'medicament',
             'get_medecine_name',
+            'get_entrepot_name',
             'quantite',
             'created_at',
             'updated_at'

@@ -104,7 +104,7 @@ class Medicament(models.Model):
     date_exp = models.DateTimeField(null=True, blank=True, default="2042-06-10T17:07:03.121812Z")
     image = models.FileField(upload_to=upload_path, blank=False, null=False)
     masse = models.CharField(max_length=10, null=False, default="")
-    qte_stock = models.IntegerField(null=False, blank=False, default=1)
+    qte_stock = models.PositiveBigIntegerField(null=False, blank=False, default=1)
     stockAlert = models.IntegerField(null=False, blank=False, default=1)
     stockOptimal = models.IntegerField(null=False, blank=False, default=1)
     description = models.TextField(default="")
@@ -334,6 +334,9 @@ class MouvementStock(models.Model):
 
     def get_medecine_name(self):
         return Medicament.objects.get(pk=self.medicament_id).nom
+
+    def get_entrepot_name(self):
+        return Entrepot.objects.get(pk=self.entrepot_id).nom
 
 
 class MouvementInventaire(models.Model):
