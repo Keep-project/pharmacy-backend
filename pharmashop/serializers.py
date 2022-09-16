@@ -91,8 +91,6 @@ class EntrepotSerializers(serializers.ModelSerializer):
 
 
 class MedicamentSerialisers(serializers.ModelSerializer):
-    #pharmacie=PharmacieSerializers(many=False, read_only=True)
-    #entrepot=EntrepotSerializers(many=False, read_only=True)
 
     class Meta:
         model = models.Medicament
@@ -205,6 +203,7 @@ class EntrepotSerializers(serializers.ModelSerializer):
             'ville',
             'telephone',
             'description',
+            'valeurVente',
             'pharmacie',
             'created_at',
             'updated_at'
@@ -212,7 +211,6 @@ class EntrepotSerializers(serializers.ModelSerializer):
 
 
 class EntrepotDetailsSerializers(serializers.ModelSerializer):
-    medicaments = MedicamentSerialisers(many=True, read_only=True)
 
     class Meta:
         model = models.Entrepot
@@ -227,7 +225,6 @@ class EntrepotDetailsSerializers(serializers.ModelSerializer):
             'pharmacie',
             'created_at',
             'updated_at',
-            'medicaments'
         ]
 
 

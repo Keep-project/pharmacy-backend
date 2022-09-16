@@ -10,7 +10,7 @@ import django
 from . import models, serializers
 
 from .helpers import distance, generateReport, hasPermission, addPermission, removePermission, clearPermissions, \
-    base64_file
+    base64_file, baseUrl, save_pdf
 import datetime
 
 
@@ -27,6 +27,24 @@ class DownloadPDF(viewsets.ViewSet):
             "users": users,
         }
         return generateReport(params)
+
+
+class GeneratePDF(viewsets.ViewSet):
+    def get(self, request):
+        users = models.Utilisateur.objects.all()
+        date = datetime.datetime.now()
+        params = {
+            "today": datetime.date.today(),
+            "hour": "{0}h {1}min {2}s".format(date.hour, date.minute, date.second),
+            "users": users,
+        }
+        titre = "Liste_des_users"
+        file_name, state = save_pdf(params, titre)
+
+        if not state:
+            return Response({"status": 400})
+
+        return Response({"status": status.HTTP_200_OK, "path": f'{baseUrl()}media/pdfs/{file_name}'})
 
 
 class HasPermissionViewSet(viewsets.GenericViewSet):
@@ -241,6 +259,19 @@ class InventaireDetailViewSet(viewsets.ViewSet):
                          "message": "L'inventaire ayant l'id = {0} n'existe pas !".format(id)})
 
 
+class EntrepotForPharmacyListViewSet(viewsets.GenericViewSet):
+    '''
+        Cette méthode permet de lister et sauvegarder les entrepôts des pharmacies
+    '''
+    authentication_classes = [JWTAuthentication]
+
+    def list(self, request, idPharmacy=None, *args, **kwargs):
+        entrepots = models.Entrepot.objects.filter(pharmacie_id=idPharmacy)
+        serializer = serializers.EntrepotSerializers(entrepots, many=True)
+        return Response({'success': True, 'status': status.HTTP_200_OK, 'message': 'Liste des entrepôts', \
+                         'results': serializer.data}, status=status.HTTP_200_OK)
+
+
 class EntrepotForPharmacyViewSet(viewsets.GenericViewSet):
     '''
         Cette méthode permet de lister et sauvegarder les entrepôts des pharmacies
@@ -251,6 +282,19 @@ class EntrepotForPharmacyViewSet(viewsets.GenericViewSet):
         entrepot = models.Entrepot.objects.filter(pharmacie_id=idPharmacy)
         page = self.paginate_queryset(entrepot)
         serializer = serializers.EntrepotSerializers(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
+
+class MedicamentForEntrepotViewSet(viewsets.GenericViewSet):
+    '''
+        Cette méthode permet de lister et sauvegarder les entrepôts des pharmacies
+    '''
+    authentication_classes = [JWTAuthentication]
+
+    def list(self, request, idEntrepot=None, *args, **kwargs):
+        medicaments = models.Medicament.objects.filter(entrepot_id=idEntrepot)
+        page = self.paginate_queryset(medicaments)
+        serializer = serializers.MedicamentSerialisers(page, many=True)
         return self.get_paginated_response(serializer.data)
 
 
@@ -352,8 +396,8 @@ class FactureViewSet(viewsets.GenericViewSet):
     def post(self, request, *args, **kwargs):
         medicaments = request.data.get('medicaments')
         if not request.data['note']:
-            request.data['note'] = "Facture pour paiement complèt de {0} médicament(s) à raison de: {0} F" \
-                .format(request.data.get('montantTotal'), request.data.get('montantTotal'))
+            request.data['note'] = "Facture pour paiement complèt de {0} médicament(s) à raison de: {1} F" \
+                .format(request.data.get('quantiteTotal'), request.data.get('montantTotal'))
         request.data['utilisateur'] = request.user.id
         serializer = serializers.FactureSerializers(data=request.data)
         if serializer.is_valid():
@@ -387,11 +431,12 @@ class FactureViewSet(viewsets.GenericViewSet):
                             quantite=- quantite
                         ).save()
 
-                    return Response({'success': True, 'status': status.HTTP_200_OK,  \
+                    return Response({'success': True, 'status': status.HTTP_200_OK, \
                                      'message': 'Factures créée avec succès', \
                                  'lignes': len(medicaments), 'results': serializer.data}, status=status.HTTP_200_OK)
 
             except Exception as e:
+                print(str(e))
                 return Response({'success': False, 'status': status.HTTP_500_INTERNAL_SERVER_ERROR, \
                     'message': 'Une erreur est apparue. Merci de vérifier les quantités et de recommencer votre requête.', \
                     'results': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -452,15 +497,42 @@ class PharmacieProcheViewSet(viewsets.GenericViewSet):
     def list(self, request, d=0, *args, **kwargs):
         latitude = float(request.data.get('latitude', 0))  # latitude de l'utilisateur
         longitude = float(request.data.get('longitude', 0))  # longitude de l'utilisateur
+        search = request.data.get('search')
+        pays = request.data.get('pays')
+        ville = request.data.get('ville')
+        quartier = request.data.get('quartier')
         pharmacies = models.Pharmacie.objects.all()  # Liste des pharmacies
         mylist = []
-        for p in pharmacies:
-            if int(distance(latitude, p.latitude, longitude, p.longitude)) <= int(d):
-                serializer = serializers.PharmacieSerializers(p)
-                mylist.append(serializer.data)
+        if search:
+            pharmacies = pharmacies.filter(nom__icontains=search)
+        if pays and ville:
+            latitude, longitude = 0.0, 0.0
+            pharmacies = pharmacies.filter(
+                Q(localisation__icontains=pays) |
+                Q(localisation__icontains=ville)
+            )
+
+        if quartier:
+            latitude, longitude = 0.0, 0.0
+            pharmacies = pharmacies.filter(
+                Q(localisation__icontains=quartier)
+            )
+
+        if latitude != 0.0 and longitude != 0.0:
+            for p in pharmacies:
+                long = float(distance(latitude, p.latitude, longitude, p.longitude))
+                if long <= float(d):
+                    serializer = serializers.PharmacieSerializers(p)
+                    data = serializer.data
+                    data["distance"] = long
+                    mylist.append(data)
+
+        serializerdata = serializers.PharmacieSerializers(pharmacies, many=True)
+
         return Response({'status': status.HTTP_200_OK, 'success': True, 'message': \
             'liste des pharmacies dans un rayon {0} KM'.format(d), 'count': len(mylist), \
-                         'results': mylist}, status=status.HTTP_200_OK)
+                         'results':  mylist if latitude != 0.0 and longitude != 0.0 else serializerdata.data},\
+                        status=status.HTTP_200_OK)
 
 
 class PharmacieFilterViewSet(viewsets.ViewSet):
@@ -864,7 +936,7 @@ class ListMedicamentForPhamacie(viewsets.GenericViewSet):
 
     def list(self, request, id=None, *args, **kwargs):
         query = request.data.get('query', [])
-        medicaments = models.Medicament.objects.filter(pharmacie__id=int(id)).order_by('qte_stock', 'nom')
+        medicaments = models.Medicament.objects.filter(pharmacie__id=int(id))
         for dic in query:
             key = list(dic.keys())[0]
             if key == "categorie" and dic[key]:

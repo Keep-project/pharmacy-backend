@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.db.models import Q, Sum
+from django.db.models import F, Q, Sum
 import datetime
 
 
@@ -18,7 +18,7 @@ import datetime
 
 
 BASE_URL = 'http://192.168.220.1:8000'
-# BASE_URL = 'http://192.168.43.60:8000'
+'''BASE_URL = 'http://192.168.43.60:8000'''
 
 
 def upload_path(instance, filename):
@@ -219,7 +219,7 @@ class Facture(models.Model):
     medicaments = models.ManyToManyField(Medicament, through='MedicamentFacture')
     montantTotal = models.IntegerField(null=False, blank=False, default=1)
     quantiteTotal = models.IntegerField(null=False, blank=False, default=1)
-    reduction = models.IntegerField(null=False, blank=False, default=0)
+    reduction = models.IntegerField(null=True, blank=True, default=0)
     note = models.TextField()
     # dateEcheance = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -272,6 +272,14 @@ class Entrepot(models.Model):
 
     def __str__(self):
         return "{0}".format(self.nom)
+
+    def valeurVente(self):
+        medicaments = Medicament.objects.filter(entrepot_id=self.id)
+        somme = 0
+        for medoc in medicaments:
+            somme += medoc.qte_stock * medoc.prix
+
+        return somme
 
 """
 class EntrepotMedicament(models.Model):

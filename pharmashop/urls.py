@@ -63,6 +63,7 @@ urlpatterns = [
 
     # Générer des pdfs
     re_path(r'^utilisateurs/pdf/$', views.DownloadPDF.as_view({"get": "get"}), name="users_pdf"),
+    re_path(r'^utilisateurs/pdfs/$', views.GeneratePDF.as_view({"get": "get"}), name="users_pdfs"),
 
     # Gestion de la facturation
     re_path(r"^facture/$", views.FactureViewSet.as_view({'get': 'list', 'post': 'post'}), name='liste_facture'),
@@ -80,6 +81,12 @@ urlpatterns = [
 
     re_path(r"^entrepot/pharmacy/(?P<idPharmacy>\d+)$", views.EntrepotForPharmacyViewSet.as_view({'get': 'list', \
             'post': 'list'}), name='poster_entrepot'),
+
+    re_path(r"^entrepot/pharmacy/(?P<idPharmacy>\d+)/list$", views.EntrepotForPharmacyListViewSet.as_view({'get': 'list', \
+            'post': 'list'}), name='poster_entrepot_list'),
+
+    re_path(r"^entrepot/medecine/(?P<idEntrepot>\d+)/list$", views.MedicamentForEntrepotViewSet.as_view({'get': 'list', \
+            'post': 'list'}), name='poster_entrepot_list_medecine'),
 
 
     # Gestion des inventaires

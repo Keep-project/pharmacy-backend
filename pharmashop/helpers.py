@@ -1,4 +1,6 @@
 import base64
+from io import BytesIO
+from django.conf import settings
 from math import radians, cos, sin, asin, sqrt
 
 from django.core.files.base import ContentFile
@@ -7,10 +9,12 @@ from xhtml2pdf import pisa
 from django.shortcuts import HttpResponse
 from django.contrib.auth.models import Permission
 from django.core.mail import send_mail
+import datetime
 
+
+BaseUrl = 'http://192.168.43.60:8000/'
 
 # ☺ Python 3 program to calculate Distance Between Two Points on Earth
-
 def distance(lat1, lat2, lon1, lon2):
      
     # The math module contains a function named
@@ -57,6 +61,35 @@ def generateReport(params: dict):
     if pisa_status.err:
         return
     return response
+
+
+def baseUrl():
+    return BaseUrl
+
+
+def save_pdf(params: dict, doc_name=None):
+    template = get_template("users.html")
+    html = template.render(params)
+    response = BytesIO()
+    pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), response)
+    date = datetime.datetime.now()
+    if doc_name:
+        filename = "{0}-{1}.pdf".format(
+            str("{0}-{1}-{2}-{3}-{4}-{5}".format(date.year, date.month, date.day, date.hour, date.minute, date.second)),
+            doc_name)
+    else:
+        filename = "{0}.pdf".format(date.timestamp())
+
+    try:
+        with open(str(settings.BASE_DIR) + f'/media/pdfs/{filename}', "wb+") as output:
+            pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), output)
+    except Exception as e:
+        print(e)
+
+    if pdf.err:
+        return '', False
+
+    return filename, True
 
 
 def send_email():
