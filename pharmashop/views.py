@@ -51,9 +51,9 @@ class SetPasswordViewSet(viewsets.ViewSet):
     authentication_classes = [JWTAuthentication]
 
     def post(self, request):
-        if set_password(request.user.id, request.data.get("newpassword"), 'patrick1kenne@gmail.com'):
+        if set_password(request.user.id, request.data.get("newpassword")):
             return Response({'success': True, 'status': status.HTTP_200_OK,
-                             'message': 'Mot de passe mis à jour avec succès !'},
+                             'message': 'Mot de passe modifié avec succès !'},
                             status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'status': status.HTTP_400_BAD_REQUEST,

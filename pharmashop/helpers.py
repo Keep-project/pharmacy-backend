@@ -150,16 +150,17 @@ def base64_file(data, name=None):
     return ContentFile(base64.b64decode(_img_str), name='{}.{}'.format(name, ext))
 
 
-def set_password(pk, newpassword, email):
+def set_password(pk, newpassword):
 
     try:
-        u = User.objects.get(pk=pk)
-        u.set_password(newpassword)
-        u.save()
+        user = User.objects.get(pk=pk)
+        user.set_password(newpassword)
+        user.save()
         send_mail("Changement de mot de passe",
-                  "Bonjour M/Mme. Vous venez de changer votre mot de passe sur l'application Pocket Pharma. Votre nouveau mot de passe est: {0}".format(newpassword),
+                  "Bonjour M/Mme {0}. Vous venez de changer votre mot de passe sur l'application Pocket Pharma.\nVotre nouveau mot de passe est: {1}\n"
+                  "Modifié le:  {2}".format(user.username, newpassword, datetime.datetime.now()),
                   'patrickkennenl@gmail.com',
-                  [email], fail_silently=False)
+                  [user.email], fail_silently=False)
         return True
     except Exception as e:
         print(e)
