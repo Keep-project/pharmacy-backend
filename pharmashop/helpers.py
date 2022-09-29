@@ -10,6 +10,7 @@ from django.shortcuts import HttpResponse
 from django.contrib.auth.models import Permission
 from django.core.mail import send_mail
 import datetime
+from django.contrib.auth.models import User
 
 
 BaseUrl = 'http://192.168.43.60:8000/'
@@ -147,3 +148,21 @@ def base64_file(data, name=None):
     if not name:
         name = _name.split(":")[-1]
     return ContentFile(base64.b64decode(_img_str), name='{}.{}'.format(name, ext))
+
+
+def set_password(pk, newpassword, email):
+
+    try:
+        u = User.objects.get(pk=pk)
+        u.set_password(newpassword)
+        u.save()
+        send_mail("Changement de mot de passe",
+                  "Bonjour M/Mme. Vous venez de changer votre mot de passe sur l'application Pocket Pharma. Votre nouveau mot de passe est: {0}".format(newpassword),
+                  'patrickkennenl@gmail.com',
+                  [email], fail_silently=False)
+        return True
+    except Exception as e:
+        print(e)
+        return False
+
+

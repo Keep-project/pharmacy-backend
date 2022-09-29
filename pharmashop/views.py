@@ -10,7 +10,7 @@ import django
 from . import models, serializers
 
 from .helpers import distance, generateReport, hasPermission, addPermission, removePermission, clearPermissions, \
-    base64_file, baseUrl, save_pdf
+    base64_file, baseUrl, save_pdf, set_password
 import datetime
 
 
@@ -45,6 +45,19 @@ class GeneratePDF(viewsets.ViewSet):
             return Response({"status": 400})
 
         return Response({"status": status.HTTP_200_OK, "path": f'{baseUrl()}media/pdfs/{file_name}'})
+
+
+class SetPasswordViewSet(viewsets.ViewSet):
+    authentication_classes = [JWTAuthentication]
+
+    def post(self, request):
+        if set_password(request.user.id, request.data.get("newpassword"), 'patrick1kenne@gmail.com'):
+            return Response({'success': True, 'status': status.HTTP_200_OK,
+                             'message': 'Mot de passe mis à jour avec succès !'},
+                            status=status.HTTP_200_OK)
+        else:
+            return Response({'success': False, 'status': status.HTTP_400_BAD_REQUEST,
+                             'message': 'Erreur de mise à jour du mot de passe'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class HasPermissionViewSet(viewsets.GenericViewSet):
@@ -396,8 +409,8 @@ class FactureViewSet(viewsets.GenericViewSet):
     def post(self, request, *args, **kwargs):
         medicaments = request.data.get('medicaments')
         if not request.data['note']:
-            request.data['note'] = "Facture pour paiement complèt de {0} médicament(s) à raison de: {1} F" \
-                .format(request.data.get('quantiteTotal'), request.data.get('montantTotal'))
+            request.data['note'] = "Arrêter le présente facture à la somme de {0} F représentant l'achat de {1} médicament(s)." \
+                .format(request.data.get('montantTotal'), request.data.get('quantiteTotal'))
         request.data['utilisateur'] = request.user.id
         serializer = serializers.FactureSerializers(data=request.data)
         if serializer.is_valid():
@@ -772,7 +785,6 @@ class FilterMedicamentViewSet(viewsets.GenericViewSet):
     def list(self, request, *args, **kwargs):
         query = request.data.get('query', [])
         medicaments = models.Medicament.objects.all().order_by("prix", "qte_stock")
-        print(query)
         for dic in query:
             key = list(dic.keys())[0]
             if key == "position" and len(dic[key]):
@@ -880,7 +892,9 @@ class MedicamentDetailViewSet(viewsets.ViewSet):
     def put(self, request, id=None):
         medicament = self.get_object(id)
         if medicament:
-            serializer = serializers.MedicamentSerialisers(medicament, data=request.data)
+            data = request.data
+            data['user'] = models.Utilisateur.objects.get(pk=request.user.id)
+            serializer = serializers.MedicamentSerialisers(medicament, data=data)
             if serializer.is_valid():
                 newstock = request.data.get('qte_stock')
                 if int(newstock) > int(medicament.qte_stock):
@@ -897,12 +911,13 @@ class MedicamentDetailViewSet(viewsets.ViewSet):
                     models.MouvementStock(
                         entrepot=models.Entrepot.objects.get(id=request.data.get('entrepot')),
                         medicament=models.Medicament.objects.get(id=int(id)),
-                        description="Mise à jour du stock du produit {0}. Quantité initiale {1}, quantité finale {2}. Rétiré par: {1}." \
-                            .format(request.data.get('nom'), request.user.username),
+                        description="Mise à jour du stock du produit {0}. Quantité initiale {1}, quantité finale {2}. Rétiré par: {3}." \
+                            .format(request.data.get('nom'), medicament.qte_stock, newstock, request.user.username),
                         quantite=-(int(medicament.qte_stock) - request.data.get('qte_stock')),
                     ).save()
+                prixMedoc = medicament.prix
                 serializer.save()
-                if medicament.prix != request.data.get('prix'):
+                if prixMedoc != request.data.get('prix'):
                     models.HistoriquePrix(
                         basePrix=request.data.get('basePrix') if request.data.get('basePrix') else "HT",
                         tva=request.data.get('tva') if request.data.get('tva') else 19.25,

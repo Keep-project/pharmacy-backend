@@ -65,6 +65,9 @@ urlpatterns = [
     re_path(r'^utilisateurs/pdf/$', views.DownloadPDF.as_view({"get": "get"}), name="users_pdf"),
     re_path(r'^utilisateurs/pdfs/$', views.GeneratePDF.as_view({"get": "get"}), name="users_pdfs"),
 
+    re_path(r'^utilisateurs/setpassword/$', views.SetPasswordViewSet.as_view({"post": "post", "put": "post"}),
+            name="set_password"),
+
     # Gestion de la facturation
     re_path(r"^facture/$", views.FactureViewSet.as_view({'get': 'list', 'post': 'post'}), name='liste_facture'),
     re_path(r"^facture/(?P<id>\d+)$",  \

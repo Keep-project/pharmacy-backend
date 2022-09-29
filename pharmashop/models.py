@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.db.models import F, Q, Sum
+from django.db.models import Q, Sum
 import datetime
 
 
@@ -102,7 +102,7 @@ class Medicament(models.Model):
     # prixAchat = models.IntegerField(null=False, blank=False, default=1)
     marque = models.CharField(max_length=255, null=True, default="")
     date_exp = models.DateTimeField(null=True, blank=True, default="2042-06-10T17:07:03.121812Z")
-    image = models.FileField(upload_to=upload_path, blank=False, null=False)
+    image = models.FileField(upload_to=upload_path, blank=True, null=True)
     masse = models.CharField(max_length=10, null=False, default="")
     qte_stock = models.PositiveBigIntegerField(null=False, blank=False, default=1)
     stockAlert = models.IntegerField(null=False, blank=False, default=1)
@@ -129,7 +129,7 @@ class Medicament(models.Model):
 
         if self.image:
             return BASE_URL + self.image.url
-        return BASE_URL + "/media/images/default-image.jpg"
+        return BASE_URL + "/media/images/medecine_for.png"
 
     def pharmacies(self):
         medicaments = Medicament.objects.filter(Q(nom=self.nom))
