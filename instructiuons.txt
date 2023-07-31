@@ -1,0 +1,4 @@
+
+1. Après avoir cloner le projet, activer l'environnement virtuel à l'aide de la commande nom_venv\Script\activate.bat ;
+2. Installer les dépendances du projet  avec pip install -r requirements.txt ;
+3. S'assurer que la base de données postgresql existe que l'on peut se connecté avec l'utilisateur présent dans les settings de l'application ;
