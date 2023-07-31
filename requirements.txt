@@ -1,3 +1,4 @@
+APScheduler==3.10.1
 arabic-reshaper==3.0.0
 asgiref==3.7.2
 asn1crypto==1.5.1
@@ -10,11 +11,15 @@ cryptography==41.0.2
 cssselect2==0.7.0
 defusedxml==0.7.1
 Django==4.2.3
+django-apscheduler==0.6.2
 django-cors-headers==4.2.0
+django-dbbackup==4.0.2
+django-seed==0.3.1
 django-templated-mail==1.1.1
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.2.2
 djoser==2.2.0
+Faker==19.2.0
 html5lib==1.1
 idna==3.4
 lxml==4.9.3
@@ -29,6 +34,7 @@ PyJWT==2.8.0
 pypdf==3.14.0
 pypng==0.20220715.0
 python-bidi==0.4.2
+python-dateutil==2.8.2
 python3-openid==3.2.0
 pytz==2023.3
 PyYAML==6.0.1
@@ -42,6 +48,7 @@ social-auth-core==4.4.2
 sqlparse==0.4.4
 svglib==1.5.1
 tinycss2==1.2.1
+toposort==1.10
 typing_extensions==4.7.1
 tzdata==2023.3
 tzlocal==5.0.1

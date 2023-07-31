@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'djoser',
     'rest_framework',
+    'django_seed',
 
     'pharmashop.apps.PharmashopConfig'
 ]
