@@ -15,4 +15,9 @@ class Command(BaseCommand):
         print("Execution des commande...")
         
         fake = Faker(["fr_FR"])
-        print(fake.address())
+        
+        
+        for _ in range(15):
+            print(fake.unique.address())
+            print(fake.unique.uuid4())
+            print("================================")
