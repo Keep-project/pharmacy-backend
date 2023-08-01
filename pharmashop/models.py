@@ -47,7 +47,7 @@ class Utilisateur(User):
     adresse = models.CharField(max_length=255, default='ras')
     avatar = models.FileField(upload_to='avatars/', blank=True, null=True)
     status = models.CharField(max_length=255, blank=False, default="")
-    experience = models.PositiveIntegerField(max_length=255, blank=False,  default=0)
+    experience = models.PositiveIntegerField(blank=False,  default=0)
 
     def __str__(self):
         return "{0}".format(self.username)
