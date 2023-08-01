@@ -16,23 +16,37 @@ class Command(BaseCommand):
         
         fake = Faker(["fr_FR"])
         
+        nombre = 15
         
-        for i in range(15):
-            print("================ {0} ================".format(i))
-            # Créattion des utilisateurs
-            user = models.Utilisateur.objects.create_user(
-                username=fake.unique.first_name(),
-                password="patson120",
-                adresse=fake.unique.address(),
-                email=fake.unique.email(),
-                status= fake.unique.text(max_nb_chars=5),
-                experience= fake.random_int(0, 40),
-                avatar='',
-                is_active=True,
-                is_staff=True,
-                is_superuser=False
+        
+        for i in range(int(nombre/3)):
+            categorie = models.Categorie.objects.create(
+                libelle=fake.unique.text(max_nb_chars=15),
             )
             
+        count = 1
+        
+        while count <= 15:
+            # Création des utilisateurs
+            try:
+                user = models.Utilisateur.objects.create_user(
+                    username=fake.unique.first_name(),
+                    password="patson120",
+                    adresse=fake.unique.address(),
+                    email=fake.unique.email(),
+                    status= fake.unique.text(max_nb_chars=5),
+                    experience= fake.random_int(0, 40),
+                    avatar='',
+                    is_active=True,
+                    is_staff=True,
+                    is_superuser=False
+                )
+                count += 1
+            except:
+                print("Existing user")
+           
+            
+        for i in range(nombre):
             # Créattion des Pharmacies
             pharmacie = models.Pharmacie.objects.create(
                 libelle=fake.unique.text(max_nb_chars=10),
@@ -44,8 +58,43 @@ class Command(BaseCommand):
                 longitude=fake.unique.longitude(),
                 h_ouverture = fake.unique.time(pattern = '%H:%M:%S'),
                 h_fermeture = fake.unique.time(pattern = '%H:%M:%S'),
-                user = user
+                user = models.Utilisateur.objects.get(id=fake.random_int(1, nombre))
             )
+            
+        for i in range(nombre):
+            # Création d'entrepôt 
+            entrepot = models.Entrepot.objects.create(
+                nom = fake.text(max_nb_chars=10),
+                pays = fake.text(max_nb_chars=10),
+                ville = fake.text(max_nb_chars=10),
+                telephone = fake.unique.phone_number(),
+                description = fake.unique.text(max_nb_chars=100),
+                pharmacie = models.Pharmacie.objects.get(id=fake.random_int(1, nombre )),
+            )
+            
+        for i in range(nombre):
+             # Création de quelques médicaments
+            medicament = models.Medicament.objects.create(
+                nom = fake.text(max_nb_chars=10),
+                prix = fake.random_int(200, 10000),
+                marque = fake.company(),
+                date_exp = fake.iso8601(),
+                masse = "{}".format(fake.random_int(0, 500)),
+                qte_stock = fake.random_int(0, 1000),
+                stockAlert = fake.random_int(10, 1000),
+                stockOptimal = fake.random_int(20, 1000),
+                description = fake.unique.text(max_nb_chars=100),
+                posologie = fake.unique.text(max_nb_chars=100),
+                voix = fake.random_int(0, 2),
+                categorie = models.Categorie.objects.get(id=fake.random_int(1, int(nombre/3))),
+                user = models.Utilisateur.objects.get(id=fake.random_int(1, nombre )),
+                pharmacie = models.Pharmacie.objects.get(id=fake.random_int(1, nombre)),
+                entrepot = models.Entrepot.objects.get(id=fake.random_int(1, nombre)),
+            )
+            
+        
+            
+           
             
         print(models.User.objects.all().count())
         print(models.Pharmacie.objects.all().count())
