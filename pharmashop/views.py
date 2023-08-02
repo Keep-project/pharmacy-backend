@@ -1,3 +1,4 @@
+import json
 
 from rest_framework import viewsets, status
 from rest_framework.response import Response
@@ -13,8 +14,31 @@ from .helpers import distance, generateReport, hasPermission, addPermission, rem
     base64_file, baseUrl, save_pdf, set_password
 import datetime
 
+from django.core.management import call_command
+from django.http import HttpResponse
+
 
 # Create your views here.
+
+def backup(request):
+    call_command("dbbackup")
+    return HttpResponse('db created')
+
+
+def restore(request):
+    call_command("dbrestore")
+    return HttpResponse('restore data')
+
+
+def dumpdata(request):
+    call_command("dumpdata")
+    return HttpResponse('dump data')
+
+
+def loaddata(request):
+    call_command("loaddata")
+    return HttpResponse('load data')
+
 
 # Cette classe nous permet de produire des document PDF à partir d'un fichier HTML
 class DownloadPDF(viewsets.ViewSet):
@@ -53,7 +77,7 @@ class SetPasswordViewSet(viewsets.ViewSet):
     def post(self, request):
         if set_password(request.user.id, request.data.get("newpassword")):
             return Response({'success': True, 'status': status.HTTP_200_OK,
-                             'message': 'Mot de passe modifié avec succès !'},
+                             'message': 'Mot de passe modifié avec succès ! Bien vouloir consulter votre boîte mail.'},
                             status=status.HTTP_200_OK)
         else:
             return Response({'success': False, 'status': status.HTTP_400_BAD_REQUEST,
@@ -184,7 +208,7 @@ class InventaireForPharmacyViewSet(viewsets.GenericViewSet):
             Ici récupérer la liste de utilisateur enregistrés dans la pharmacy idPharmacy \
             et passer en paramètre du filtre
         '''
-        entrepots = models.Entrepot.objects.filter(pharmacie=int(idPharmacy))
+        entrepots = models.Entrepot.objects.filter(pharmacie=idPharmacy)
         entrepots_ids = [e.id for e in entrepots]
         inventaires = models.Inventaire.objects.filter(entrepot__in=entrepots_ids)
         page = self.paginate_queryset(inventaires)
@@ -507,7 +531,7 @@ class FactureDetailViewSet(viewsets.ViewSet):
 class PharmacieProcheViewSet(viewsets.GenericViewSet):
     authentication_classes = [JWTAuthentication]
 
-    def list(self, request, d=0, *args, **kwargs):
+    def list(self, request, rayon=0, *args, **kwargs):
         latitude = float(request.data.get('latitude', 0))  # latitude de l'utilisateur
         longitude = float(request.data.get('longitude', 0))  # longitude de l'utilisateur
         search = request.data.get('search')
@@ -516,6 +540,7 @@ class PharmacieProcheViewSet(viewsets.GenericViewSet):
         quartier = request.data.get('quartier')
         pharmacies = models.Pharmacie.objects.all()  # Liste des pharmacies
         mylist = []
+
         if search:
             pharmacies = pharmacies.filter(nom__icontains=search)
         if pays and ville:
@@ -534,7 +559,7 @@ class PharmacieProcheViewSet(viewsets.GenericViewSet):
         if latitude != 0.0 and longitude != 0.0:
             for p in pharmacies:
                 long = float(distance(latitude, p.latitude, longitude, p.longitude))
-                if long <= float(d):
+                if long <= float(rayon):
                     serializer = serializers.PharmacieSerializers(p)
                     data = serializer.data
                     data["distance"] = long
@@ -543,7 +568,7 @@ class PharmacieProcheViewSet(viewsets.GenericViewSet):
         serializerdata = serializers.PharmacieSerializers(pharmacies, many=True)
 
         return Response({'status': status.HTTP_200_OK, 'success': True, 'message': \
-            'liste des pharmacies dans un rayon {0} KM'.format(d), 'count': len(mylist), \
+            'liste des pharmacies dans un rayon {0} KM'.format(rayon), 'count': len(mylist), \
                          'results':  mylist if latitude != 0.0 and longitude != 0.0 else serializerdata.data},\
                         status=status.HTTP_200_OK)
 
@@ -662,7 +687,7 @@ class CategorieDetailViewSet(viewsets.ViewSet):
         except models.Categorie.DoesNotExist:
             return False
 
-    def retrieve(self, request, id=None, ):
+    def retrieve(self, request, id=None):
         categorie = self.get_object(id)
         if categorie:
             serializer = serializers.CategorieSerializers(categorie)
@@ -827,26 +852,46 @@ class MedicamentViewSet(viewsets.GenericViewSet):
         return self.get_paginated_response(serializer.data)
 
     def post(self, request, *args, **kwarg):
-        request.data['user'] = models.Utilisateur.objects.get(id=request.user.id)
-        serializer = serializers.MedicamentSerialisers(data=request.data)
+        body = request.data
+        data = {
+            "nom": body.get('nom'),
+            "prix": body.get('prix'),
+            "marque": body.get('marque'),
+            "date_exp": body.get('date_exp'),
+            "masse": body.get('masse'),
+            "qte_stock": body.get('qte_stock'),
+            "posologie": body.get('posologie'),
+            "categorie": body.get('categorie'),
+            "pharmacie": body.get('pharmacie'),
+            "description": body.get('description'),
+            "voix": body.get('voix'),
+            "stockAlert": body.get('stockAlert'),
+            "stockOptimal": body.get('stockOptimal'),
+            "entrepot": body.get('entrepot'),
+            "image": body.get('image'),
+            "user": models.Utilisateur.objects.get(id=request.user.id)
+        }
+        serializer = serializers.MedicamentSerialisers(data=data)
         if serializer.is_valid():
             try:
                 with transaction.atomic():
-                    serializer.save(image=base64_file(request.data.get('image')))
+                    if data.get('image'):
+                        serializer.save(image=base64_file(body.get('image')))
+                    serializer.save()
                     models.HistoriquePrix(
-                        basePrix=request.data.get('basePrix') if request.data.get('basePrix') else "HT",
-                        tva=request.data.get('tva') if request.data.get('tva') else 19.25,
-                        prixVente=request.data.get('prix'),
+                        basePrix=body.get('basePrix') if body.get('basePrix') else "HT",
+                        tva=body.get('tva') if body.get('tva') else 19.25,
+                        prixVente=body.get('prix'),
                         medicament=models.Medicament.objects.get(id=serializer.data.get('id')),
                         utilisateur=models.Utilisateur.objects.get(id=request.user.id)
                     ).save()
                     ''' Enregistrement d'une entrée de stock du produit '''
                     models.MouvementStock(
-                        entrepot=models.Entrepot.objects.get(id=request.data.get('entrepot')),
+                        entrepot=models.Entrepot.objects.get(id=body.get('entrepot')),
                         medicament=models.Medicament.objects.get(id=serializer.data.get('id')),
                         description="Entrée (création) en stock du produit {0} avec pour stock initial {1}. Ajouté par: {2}." \
-                            .format(request.data.get('nom'), request.data.get('qte_stock'), request.user.username),
-                        quantite=request.data.get('qte_stock'),
+                            .format(body.get('nom'), body.get('qte_stock'), request.user.username),
+                        quantite=body.get('qte_stock'),
                     ).save()
                     return Response({'success': True, 'status': status.HTTP_200_OK, 'message': \
                         'Médicament crée avec succès', 'results': serializer.data}, status=status.HTTP_200_OK)
@@ -859,14 +904,16 @@ class MedicamentViewSet(viewsets.GenericViewSet):
         elif django.db.utils.IntegrityError:
             return Response({'status': status.HTTP_400_BAD_REQUEST, 'success': False, \
                              'message': \
-                                 "Erreur de création d'un médicament. Car {0} exist déjà ! \nVous pouvez juste mettre à jour votre stock". \
-                            format(request.data.get('nom')), \
+                                 "Erreur survenue. {0} exist déjà ! \nVous pouvez juste mettre à jour votre stock. {1}". \
+                            format(request.data.get('nom'), str(serializer.errors)), \
                              'results': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
         else:
             return Response({'status': status.HTTP_400_BAD_REQUEST, 'success': False, \
                              'message': "Erreur de création du médicament. Paramètres incomplèts !", \
                              'results': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        # return Response({'message': 200}, status=status.HTTP_200_OK)
 
 
 class MedicamentDetailViewSet(viewsets.ViewSet):
@@ -929,20 +976,20 @@ class MedicamentDetailViewSet(viewsets.ViewSet):
                 return Response({'status': status.HTTP_201_CREATED, 'success': True, 'message': \
                     'Médicament mise à jour avec succès', "results": serializer.data}, status=status.HTTP_200_OK)
             return Response({'status': status.HTTP_400_BAD_REQUEST, 'message': \
-                'Une erreur est survenue lors de la mise à jour du médicament', \
+                'Une erreur est survenue lors de la mise à jour du médicament',
                              'results': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'status': status.HTTP_404_NOT_FOUND, 'success': False, \
-                         "message": "le medicament ayant l'id = {0} n'existe pas !".format(id)}, \
+        return Response({'status': status.HTTP_404_NOT_FOUND, 'success': False,
+                         "message": "le medicament ayant l'id = {0} n'existe pas !".format(id)},
                         status=status.HTTP_404_NOT_FOUND)
 
     def delete(self, request, id=None):
         medicament = self.get_object(id)
         if medicament:
             medicament.delete()
-            return Response({'status': status.HTTP_204_NO_CONTENT, 'success': True, \
+            return Response({'status': status.HTTP_204_NO_CONTENT, 'success': True,
                              'message': "Medicament supprimée avec succès"}, status=status.HTTP_204_NO_CONTENT)
-        return Response({'status': status.HTTP_404_NOT_FOUND, 'success': False, \
-                         "message": "Le medicament ayant l'id = {0} n'existe pas !".format(id)}, \
+        return Response({'status': status.HTTP_404_NOT_FOUND, 'success': False,
+                         "message": "Le medicament ayant l'id = {0} n'existe pas !".format(id)},
                         status=status.HTTP_404_NOT_FOUND, )
 
 
@@ -951,7 +998,7 @@ class ListMedicamentForPhamacie(viewsets.GenericViewSet):
 
     def list(self, request, id=None, *args, **kwargs):
         query = request.data.get('query', [])
-        medicaments = models.Medicament.objects.filter(pharmacie__id=int(id))
+        medicaments = models.Medicament.objects.filter(pharmacie__id=str(id))
         for dic in query:
             key = list(dic.keys())[0]
             if key == "categorie" and dic[key]:

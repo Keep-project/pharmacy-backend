@@ -16,14 +16,18 @@ class Command(BaseCommand):
         
         fake = Faker(["fr_FR"])
         
+        pharmacies = []
+        entrepots = []
+        categories = []
+        
         nombre = 15
         
         
-        for i in range(int(nombre/3)):
+        for _ in range(int(nombre/3)):
             categorie = models.Categorie.objects.create(
                 libelle=fake.unique.text(max_nb_chars=15),
             )
-            
+            categories.append(categorie)
         count = 1
         
         while count <= 15:
@@ -46,7 +50,7 @@ class Command(BaseCommand):
                 print("Existing user")
            
             
-        for i in range(nombre):
+        for _ in range(nombre):
             # Créattion des Pharmacies
             pharmacie = models.Pharmacie.objects.create(
                 libelle=fake.unique.text(max_nb_chars=10),
@@ -61,7 +65,9 @@ class Command(BaseCommand):
                 user = models.Utilisateur.objects.get(id=fake.random_int(1, nombre))
             )
             
-        for i in range(nombre):
+            pharmacies.append(pharmacie)
+            
+        for _ in range(nombre):
             # Création d'entrepôt 
             entrepot = models.Entrepot.objects.create(
                 nom = fake.text(max_nb_chars=10),
@@ -69,32 +75,30 @@ class Command(BaseCommand):
                 ville = fake.text(max_nb_chars=10),
                 telephone = fake.unique.phone_number(),
                 description = fake.unique.text(max_nb_chars=100),
-                pharmacie = models.Pharmacie.objects.get(id=fake.random_int(1, nombre )),
+                pharmacie = pharmacies[fake.random_int(0, nombre - 1)],
             )
+            entrepots.append(entrepot)
             
-        for i in range(nombre):
+        for _ in range(nombre):
              # Création de quelques médicaments
             medicament = models.Medicament.objects.create(
                 nom = fake.text(max_nb_chars=10),
                 prix = fake.random_int(200, 10000),
                 marque = fake.company(),
                 date_exp = fake.iso8601(),
-                masse = "{}".format(fake.random_int(0, 500)),
+                masse = "{}g".format(fake.random_int(0, 500)),
                 qte_stock = fake.random_int(0, 1000),
                 stockAlert = fake.random_int(10, 1000),
                 stockOptimal = fake.random_int(20, 1000),
                 description = fake.unique.text(max_nb_chars=100),
                 posologie = fake.unique.text(max_nb_chars=100),
                 voix = fake.random_int(0, 2),
-                categorie = models.Categorie.objects.get(id=fake.random_int(1, int(nombre/3))),
+                categorie = categories[fake.random_int(0, (int(nombre/3) - 1))],
                 user = models.Utilisateur.objects.get(id=fake.random_int(1, nombre )),
-                pharmacie = models.Pharmacie.objects.get(id=fake.random_int(1, nombre)),
-                entrepot = models.Entrepot.objects.get(id=fake.random_int(1, nombre)),
+                pharmacie = pharmacies[fake.random_int(0, nombre - 1)],
+                entrepot = entrepots[fake.random_int(0, nombre - 1)]
             )
-            
-        
-            
-           
+          
             
         print(models.User.objects.all().count())
         print(models.Pharmacie.objects.all().count())

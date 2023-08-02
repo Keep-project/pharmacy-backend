@@ -38,14 +38,29 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    
+    'django_apscheduler',
+    'dbbackup',  # django-dbbackup
+    # '''
+    # python manage.py dbbackup
+    # python manage.py dbrestore
+
+    # python manage.py dumpdata > backup/data.json
+    # python manage.py loaddata > backup/data.json
+    #
+    # '''
 
     'corsheaders',
     'djoser',
     'rest_framework',
-    'django_seed',
 
     'pharmashop.apps.PharmashopConfig'
 ]
+
+
+DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
+DBBACKUP_STORAGE_OPTIONS = {'location': os.path.join(BASE_DIR, 'backup')}
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",

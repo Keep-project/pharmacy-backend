@@ -11,11 +11,21 @@ from django.contrib.auth.models import Permission
 from django.core.mail import send_mail
 import datetime
 from django.contrib.auth.models import User
+from . import  models
 
 
-BaseUrl = 'http://192.168.43.60:8000/'
+BaseUrl = 'http://192.168.0.104:8000/'
+
+
+def find_object(id: any, models: models.BaseModel) -> any:
+    try:
+        return models.objects.get(id=id)
+    except models.DoesNotExist:
+        return False
 
 # ☺ Python 3 program to calculate Distance Between Two Points on Earth
+
+
 def distance(lat1, lat2, lon1, lon2):
      
     # The math module contains a function named
@@ -151,13 +161,12 @@ def base64_file(data, name=None):
 
 
 def set_password(pk, newpassword):
-
     try:
         user = User.objects.get(pk=pk)
         user.set_password(newpassword)
         user.save()
         send_mail("Changement de mot de passe",
-                  "Bonjour M/Mme {0}. Vous venez de changer votre mot de passe sur l'application Pocket Pharma.\nVotre nouveau mot de passe est: {1}\n"
+                  "Bonjour M/Mme {0}. Vous venez de changer votre mot de passe sur l'application Pocket Pharma.\n\nVotre nouveau mot de passe est: {1}\n"
                   "Modifié le:  {2}".format(user.username, newpassword, datetime.datetime.now()),
                   'patrickkennenl@gmail.com',
                   [user.email], fail_silently=False)
@@ -165,5 +174,3 @@ def set_password(pk, newpassword):
     except Exception as e:
         print(e)
         return False
-
-
