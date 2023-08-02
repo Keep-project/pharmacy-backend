@@ -92,7 +92,7 @@ class Command(BaseCommand):
                 stockOptimal = fake.random_int(20, 1000),
                 description = fake.unique.text(max_nb_chars=100),
                 posologie = fake.unique.text(max_nb_chars=100),
-                voix = fake.random_int(0, 2),
+                voix = fake.random_int(0, 3),
                 categorie = categories[fake.random_int(0, (int(nombre/3) - 1))],
                 user = models.Utilisateur.objects.get(id=fake.random_int(1, nombre )),
                 pharmacie = pharmacies[fake.random_int(0, nombre - 1)],
