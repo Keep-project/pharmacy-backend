@@ -93,7 +93,6 @@ class Pharmacie(BaseModel):
 
 class Symptome(BaseModel):
     libelle = models.CharField(max_length=50)
-    
 
     class Meta:
        ordering = ("-created_at",)
