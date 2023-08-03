@@ -19,6 +19,8 @@ class Command(BaseCommand):
         pharmacies = []
         entrepots = []
         categories = []
+        symtomes = []
+        maladies = []
         
         nombre = 15
         
@@ -28,8 +30,18 @@ class Command(BaseCommand):
                 libelle=fake.unique.text(max_nb_chars=15),
             )
             categories.append(categorie)
-        count = 1
+            
+        for _ in range(nombre):
+            symtome = models.Symptome.objects.create(
+                libelle=fake.unique.text(max_nb_chars=15),
+            )
+            maladie = models.Maladie.objects.create(
+                libelle=fake.unique.text(max_nb_chars=15),
+            )
+            symtomes.append(symtome)
+            maladies.append(maladie)
         
+        count = 1
         while count <= 15:
             # Création des utilisateurs
             try:
@@ -79,7 +91,7 @@ class Command(BaseCommand):
             )
             entrepots.append(entrepot)
             
-        for _ in range(nombre):
+        for _ in range(nombre*2):
              # Création de quelques médicaments
             medicament = models.Medicament.objects.create(
                 nom = fake.text(max_nb_chars=10),
@@ -94,11 +106,13 @@ class Command(BaseCommand):
                 posologie = fake.unique.text(max_nb_chars=100),
                 voix = fake.random_int(0, 3),
                 categorie = categories[fake.random_int(0, (int(nombre/3) - 1))],
-                user = models.Utilisateur.objects.get(id=fake.random_int(1, nombre )),
-                pharmacie = pharmacies[fake.random_int(0, nombre - 1)],
-                entrepot = entrepots[fake.random_int(0, nombre - 1)]
+                user = models.Utilisateur.objects.get(id=fake.random_int(1, nombre)),
+                pharmacie = pharmacies[fake.random_int(1, nombre)],
+                entrepot = entrepots[fake.random_int(1, nombre)]
             )
           
             
         print(models.User.objects.all().count())
         print(models.Pharmacie.objects.all().count())
+        
+        #  Stop au niveau de Maladie
